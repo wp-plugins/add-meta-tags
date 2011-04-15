@@ -2,14 +2,14 @@
 /*
 Plugin Name: Add Meta Tags
 Plugin URI: http://www.g-loaded.eu/2006/01/05/add-meta-tags-wordpress-plugin/
-Description: Adds the <em>Description</em> and <em>Keywords</em> XHTML META tags to your blog's <em>front page</em> and to each one of the <em>posts</em>, <em>static pages</em> and <em>category archives</em>. This operation is automatic, but the generated META tags can be fully customized. Also, the inclusion of other META tags, which do not need any computation, is possible. Please read the tips and all other info provided at the <a href="options-general.php?page=add-meta-tags.php">configuration panel</a>.
-Version: 1.7
+Description: Adds the <em>Description</em> and <em>Keywords</em> XHTML META tags to your blog's <em>front page</em> and to each one of the <em>posts</em>, <em>static pages</em> and <em>category archives</em>. This operation is automatic, but the generated META tags can be fully customized. Also, the inclusion of other META tags, which do not need any computation, is possible. Please read the tips and all other info provided at the <a href="options-general.php?page=add-meta-tags/add-meta-tags.php">configuration panel</a>.
+Version: 1.8
 Author: George Notaras
 Author URI: http://www.g-loaded.eu/
 */
 
 /*
-  Copyright 2007 George Notaras <gnot [at] g-loaded.eu>, CodeTRAX.org
+  Copyright 2007 George Notaras <gnot@g-loaded.eu>, CodeTRAX.org
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -182,6 +182,21 @@ function amt_options_page() {
 
 
 
+function amt_strtolower($text) {
+    /*
+    Helper function that converts $text to lowercase.
+    If the mbstring php plugin exists, then the string functions provided by that
+    plugin are used.
+    */
+    if (function_exists('mb_strtolower')) {
+        return mb_strtolower($text, get_bloginfo('charset'));
+    } else {
+        return strtolower($text);
+    }
+}
+
+
+
 function amt_clean_desc($desc) {
 	/*
 	This is a filter for the description metatag text.
@@ -297,7 +312,7 @@ function amt_get_post_tags() {
 			foreach ( $tags as $tag ) {
 				$tag_list .= $tag->name . ', ';
 			}
-			$tag_list = strtolower(rtrim($tag_list, " ,"));
+			$tag_list = amt_strtolower(rtrim($tag_list, " ,"));
 			return $tag_list;
 		}
 	} else {
@@ -330,7 +345,7 @@ function amt_get_all_categories($no_uncategorized = TRUE) {
 				$all_cats .= $cat->$cat_field . ', ';
 			}
 		}
-		$all_cats = strtolower(rtrim($all_cats, " ,"));
+		$all_cats = amt_strtolower(rtrim($all_cats, " ,"));
 		return $all_cats;
 	}
 }
@@ -353,6 +368,7 @@ function amt_add_meta_tags() {
 	appropriate page.
 	*/
 	global $posts, $include_keywords_in_single_posts;
+    global $paged;
 
 	/*
 	Get the options the DB
@@ -416,15 +432,15 @@ function amt_add_meta_tags() {
 						$keyw_fld_content = str_replace("%tags%", amt_get_post_tags(), $keyw_fld_content);
 					}
 				}
-				$my_metatags .= "\n<meta name=\"keywords\" content=\"" . strtolower($keyw_fld_content) . "\" />";
+				$my_metatags .= "\n<meta name=\"keywords\" content=\"" . amt_strtolower($keyw_fld_content) . "\" />";
 			} elseif ( is_single() ) {
 				/*
 				Add keywords automatically.
 				Keywords consist of the post's categories and the post's tags (tags exist in WordPress 2.3 or newer).
 				Only for Single Post View (not valid for Pages)
 				*/
-				$my_metatags .= "\n<meta name=\"keywords\" content=\"" . strtolower(amt_get_keywords_from_post_cats());
-				$post_tags = strtolower(amt_get_post_tags());
+				$my_metatags .= "\n<meta name=\"keywords\" content=\"" . amt_strtolower(amt_get_keywords_from_post_cats());
+				$post_tags = amt_strtolower(amt_get_post_tags());
 				if ( $post_tags ) {
 					$my_metatags .= ", " . $post_tags;
 				}
@@ -481,7 +497,11 @@ function amt_add_meta_tags() {
 
 		$cur_cat_desc = category_description();
 		if ( $cur_cat_desc ) {
-			$my_metatags .= "\n<meta name=\"description\" content=\"" . amt_clean_desc($cur_cat_desc) . "\" />";
+            $description_content = amt_clean_desc($cur_cat_desc);
+            if ( $paged ) {
+                $description_content .= ' (page ' . $paged . ')';
+            }
+			$my_metatags .= "\n<meta name=\"description\" content=\"" . $description_content . "\" />";
 		}
 		
 		/*
@@ -489,7 +509,7 @@ function amt_add_meta_tags() {
 		*/
 		$cur_cat_name = single_cat_title($prefix = '', $display = false );
 		if ( $cur_cat_name ) {
-			$my_metatags .= "\n<meta name=\"keywords\" content=\"" . strtolower($cur_cat_name) . "\" />";
+			$my_metatags .= "\n<meta name=\"keywords\" content=\"" . amt_strtolower($cur_cat_name) . "\" />";
 		}
 	}
 
@@ -497,6 +517,50 @@ function amt_add_meta_tags() {
 		echo "\n<!-- META Tags added by Add-Meta-Tags WordPress plugin. Get it at: http://www.g-loaded.eu/ -->" . $my_metatags . "\n" . amt_get_site_wide_metatags($site_wide_meta) . "\n\n";
 	}
 }
+
+
+
+/*
+Template Tags
+*/
+function amt_get_content_description() {
+	/*
+	This is a helper function that returns the post's or page's description.
+	*/
+	global $posts;
+
+    $content_description = '';
+
+	if ( is_single() || is_page() ) {
+
+		/* Custom description field name */
+		$desc_fld = "description";
+
+		/*
+		Description
+		Custom post field "description" overrides post's excerpt in Single Post View.
+		*/
+		$desc_fld_content = get_post_meta($posts[0]->ID, $desc_fld, true);
+		if ( !empty($desc_fld_content) ) {
+			/*
+			If there is a custom field, use it
+			*/
+			$content_description = amt_clean_desc($desc_fld_content);
+		} elseif ( is_single() ) {
+			/*
+			Else, use the post's excerpt. Only for Single Post View (not valid for Pages)
+			*/
+			$content_description = amt_clean_desc(amt_get_the_excerpt());
+		}
+    }
+    return $content_description;
+}
+
+function amt_content_description() {
+    echo amt_get_content_description();
+}
+
+
 
 /*
 Actions
