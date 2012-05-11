@@ -3,7 +3,7 @@
 Plugin Name: Add Meta Tags
 Plugin URI: http://www.g-loaded.eu/2006/01/05/add-meta-tags-wordpress-plugin/
 Description: Adds the <em>Description</em> and <em>Keywords</em> XHTML META tags to your blog's <em>front page</em>, posts, pages, category-based archives and tag-based archives. Also adds <em>Opengraph</em> and <em>Dublin Core</em> metadata on posts and pages.
-Version: 2.0.2
+Version: 2.0.3
 Author: George Notaras
 Author URI: http://www.g-loaded.eu/
 License: Apache License v2
@@ -907,7 +907,7 @@ function amt_add_opengraph_metadata() {
         $metadata_arr[] = '<meta property="og:site_name" content="' . get_bloginfo('name') . '" />';
         
         // Image
-        if (has_post_thumbnail()) {
+        if (function_exists('has_post_thumbnail') && has_post_thumbnail()) {
             $thumbnail_info = wp_get_attachment_image_src( get_post_thumbnail_id($post->ID) );
             $metadata_arr[] = '<meta property="og:image" content="' . $thumbnail_info[0] . '" />';
             //$metadata_arr[] = '<meta property="og:image:secure_url" content="' . str_replace('http:', 'https:', $thumbnail_info[0]) . '" />';
