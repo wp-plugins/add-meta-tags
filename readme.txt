@@ -3,21 +3,22 @@ License: Apache License v2
 Donate link: http://www.g-loaded.eu/about/donate/
 Tags: meta, metadata, seo, description, keywords, metatag, opengraph, dublin core, google, yahoo, bing, meta tags
 Requires at least: 3.0.0
-Tested up to: 3.5
-Stable tag: 2.1.1
+Tested up to: 3.5.1
+Stable tag: 2.1.2
 
 Adds metadata to your content, including the basic description and keywords meta tags, Opengraph and Dublin Core metadata.
 
 == Description ==
 
-[Add-Meta-Tags](http://www.g-loaded.eu/2006/01/05/add-meta-tags-wordpress-plugin/ "Official Add-Meta-Tags Homepage") adds metadata to your WordPress blog.
+*Add-Meta-Tags* adds metadata to your content, including the basic description and keywords meta tags, Opengraph and Dublin Core metadata. It is actively maintained since 2006 (historical [Add-Meta-Tags home](http://www.g-loaded.eu/2006/01/05/add-meta-tags-wordpress-plugin/ "Official Add-Meta-Tags Homepage")).
 
 *Metadata* refers to information that describes the content in a machine-friendly way. Search engines and other online services use this metadata to better understand your content. Keep in mind that metadata itself does not automatically make your blog rank better. For this to happen the content is still required to meet various quality standards. However, the presence of accurate and adequate metadata gives search engines and other services the chance to make less guesses about your content, index and categorize it better and, eventually, deliver it to an audience that finds it useful.  Good metadata facilitates this process and thus plays a significant role in achieving better rankings. This is what the *Add-Meta-Tags* plugin does.
 
 The following list outlines how and where metadata is added to a *WordPress* blog.
 
+**Basic meta tags**
 
-Basic <em>description</em> and <em>keywords</em> meta tags:
+The <em>description</em> and <em>keywords</em> meta tags are added:
 
 - Front Page
  - Automatically.
@@ -43,8 +44,7 @@ Basic <em>description</em> and <em>keywords</em> meta tags:
 - Head link to copyright page.
 - Default image to use in metadata, if a featured image has not been set.
 
-
-Opengraph metadata
+**Opengraph metadata**
 
 - Front page
  - Automatic addition of metadata.
@@ -53,29 +53,37 @@ Opengraph metadata
  - Automatic addition of metadata.
  - Use featured image or alternatively the default image if URL has been set.
 
-
-Dublin Core metadata
+**Dublin Core metadata**
 
 - Posts and Pages
  - Automatic addition of metadata.
 
-
-Extra SEO features
+**Extra SEO features**
 
 - Add the `NOODP,NOYDIR` option to the robots meta tag.
 - Add the `NOINDEX,FOLLOW` options to the robots meta tag on category, tag, author or time based archives and search results.
 
+**Languages**
 
-More:
+Add-Meta-Tags is available in the following languages:
+
+* English (default language)
+* Slovak (sk_SK) - contributed by Branco from <a href="http://webhostinggeeks.com/user-reviews/">WebHostingGeeks.com</a>
+
+**More**
  
-Check out other [open source software](http://www.codetrax.org/projects) by the same author.
+Check out other [open source software](http://www.codetrax.org/projects) by George Notaras.
 
 
 == Installation ==
 
-1. Extract the compressed (zip) package in the `/wp-content/plugins/` directory.
-2. Activate the plugin through the 'Plugins' menu in WordPress
-3. Visit the plugin's administration panel at `Options->Metadata` to read the detailed instructions about customizing the generated metatags.
+Add-Meta-Tags can be easily installed through the plugin management interface from within the WordPress administration panel (*recommended*).
+
+Alternatively, you may manually extract the compressed (zip) package in the `/wp-content/plugins/` directory.
+
+After the plugin has been installed, activate it through the 'Plugins' menu in WordPress.
+
+Finally, visit the plugin's administration panel at `Options->Metadata` to read the detailed instructions about customizing the generated metatags.
 
 As it has been mentioned, no configuration is required for the plugin to function. It will add meta tags automatically. Full customization is possible though.
 
@@ -114,6 +122,8 @@ Please, use our [issue database](http://www.codetrax.org/projects/wp-add-meta-ta
 
 == Screenshots ==
 
+Screenshots as of v2.1.0.
+
 1. Add-Meta-Tags administration interface.
 2. Enable Metadata meta box in the screen options of the post/page editing panel.
 3. Metadata meta box in the post editing panel.
@@ -123,6 +133,7 @@ Please, use our [issue database](http://www.codetrax.org/projects/wp-add-meta-ta
 
 Please check out the changelog of each release by following the links below. You can also check the [roadmap](http://www.codetrax.org/projects/wp-add-meta-tags/roadmap "Add-Meta-Tags Roadmap") regarding future releases of the plugin.
 
+- [2.1.2](http://www.codetrax.org/versions/169)
 - [2.1.1](http://www.codetrax.org/versions/168)
 - [2.1.0](http://www.codetrax.org/versions/126)
 - [2.0.4](http://www.codetrax.org/versions/132)
