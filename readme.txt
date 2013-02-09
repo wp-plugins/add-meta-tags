@@ -4,7 +4,7 @@ Donate link: http://www.g-loaded.eu/about/donate/
 Tags: meta, metadata, seo, description, keywords, metatag, opengraph, dublin core, google, yahoo, bing, meta tags
 Requires at least: 3.0.0
 Tested up to: 3.5.1
-Stable tag: 2.1.2
+Stable tag: 2.1.3
 
 Adds metadata to your content, including the basic description and keywords meta tags, Opengraph and Dublin Core metadata.
 
@@ -33,6 +33,8 @@ The <em>description</em> and <em>keywords</em> meta tags are added:
  - Automatically (description only - no automatic keywords).
  - Customization of the *description* meta tag is possible by setting a custom description in the *Metadata* meta box in the page editing panel.
  - Setting a *keywords* meta tag is possible by setting a custom list of keywords in the *Metadata* meta box in the post editing panel.
+- Attachment Pages
+ - A 'description' metatag is automatically generated from the caption or, if a caption has not been set, from the description of the attachment.
 - Category-based Archives
  - The description of the category, if set, is used for the description meta tag. The name of the category is always used at the keywords metatag.
 - Tag-based Archives
@@ -133,6 +135,7 @@ Screenshots as of v2.1.0.
 
 Please check out the changelog of each release by following the links below. You can also check the [roadmap](http://www.codetrax.org/projects/wp-add-meta-tags/roadmap "Add-Meta-Tags Roadmap") regarding future releases of the plugin.
 
+- [2.1.3](http://www.codetrax.org/versions/170)
 - [2.1.2](http://www.codetrax.org/versions/169)
 - [2.1.1](http://www.codetrax.org/versions/168)
 - [2.1.0](http://www.codetrax.org/versions/126)

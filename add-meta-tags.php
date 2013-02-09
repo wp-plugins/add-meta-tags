@@ -3,7 +3,7 @@
 Plugin Name: Add Meta Tags
 Plugin URI: http://www.g-loaded.eu/2006/01/05/add-meta-tags-wordpress-plugin/
 Description: Adds the <em>Description</em> and <em>Keywords</em> XHTML META tags to your blog's <em>front page</em>, posts, pages, category-based archives and tag-based archives. Also adds <em>Opengraph</em> and <em>Dublin Core</em> metadata on posts and pages.
-Version: 2.1.2
+Version: 2.1.3
 Author: George Notaras
 Author URI: http://www.g-loaded.eu/
 License: Apache License v2
@@ -456,6 +456,10 @@ function amt_options_page() {
         <p>'.__('A <em>description</em> meta tag is automatically generated from the content and added to pages. It is possible to set a custom description for pages in the <em>Metadata</em> meta box in the page editing panel.', 'add-meta-tags').'</p>
         <p>'.__('A <em>keywords</em> meta tag <strong>is not</strong> added automatically to pages. It is possible to set keywords for pages in the <em>Metadata</em> meta box in the page editing panel.', 'add-meta-tags').'</p>
 
+        <h3>'.__('Metadata on Attachment Pages', 'add-meta-tags').'</h3>
+        <p>'.__('A <em>description</em> meta tag is automatically generated from the caption or, if a caption has not been set, from the description of the attachment.', 'add-meta-tags').'</p>
+        <p>'.__('A <em>keywords</em> meta tag <strong>is not</strong> added to attachment pages.', 'add-meta-tags').'</p>
+
         <h3>'.__('Metadata on Category and Tag Archives', 'add-meta-tags').'</h3>
         <p>'.__('A <em>description</em> meta tag is automatically added to category-based and tag-based archives, only if a description has been set for that specific category or tag.', 'add-meta-tags').'</p>
         <p>'.__('A <em>keywords</em> meta tag is always added automatically to category-based and tag-based archives. The value of the meta tag is set to the category or tag name respectively.', 'add-meta-tags').'</p>
@@ -474,20 +478,37 @@ function amt_options_page() {
 /* Define the custom box */
 add_action( 'add_meta_boxes', 'amt_add_metadata_box' );
 
-/* Adds a box to the main column on the Post and Page edit screens */
+/**
+ * Adds a box to the main column of the editing panel of the following built-in
+ * post types:
+ *
+ *   - post
+ *   - page
+ *
+ * And also to ALL public custom post types.
+ *
+ * NOTE ABOUT attachments:
+ * The 'attachment' post type does not support saving custom fields like other post types.
+ * See: http://www.codetrax.org/issues/875
+ *
+ */
 function amt_add_metadata_box() {
-    add_meta_box( 
-        'amt-metadata-box',
-        __( 'Metadata', 'add-meta-tags' ),
-        'amt_inner_metadata_box',
-        'post' 
-    );
-    add_meta_box(
-        'amt-metadata-box',
-        __( 'Metadata', 'add-meta-tags' ), 
-        'amt_inner_metadata_box',
-        'page'
-    );
+    $supported_builtin_types = array('post', 'page');
+    $public_custom_types = get_post_types( array('public'=>true, '_builtin'=>false) );
+    $supported_types = array_merge($supported_builtin_types, $public_custom_types);
+
+    // Add an Add-Meta-Tags meta box to all supported types
+    foreach ($supported_types as $supported_type) {
+        add_meta_box( 
+            'amt-metadata-box',
+            __( 'Metadata', 'add-meta-tags' ),
+            'amt_inner_metadata_box',
+            $supported_type,
+            'advanced',
+            'high'
+        );
+    }
+
 }
 
 /* Prints the box content */
@@ -500,8 +521,8 @@ function amt_inner_metadata_box( $post ) {
     $post_type = get_post_type( $post->ID );
 
     // Retrieve the field data from the database.
-    $custom_description_value = get_post_meta( $post->ID, 'description', true );
-    $custom_keywords_value = get_post_meta( $post->ID, 'keywords', true );
+    $custom_description_value = amt_get_post_meta_description( $post->ID );
+    $custom_keywords_value = amt_get_post_meta_keywords( $post->ID );
 
     // Display the meta box HTML code.
 
@@ -522,6 +543,12 @@ function amt_inner_metadata_box( $post ) {
             </p>
         ');
     } elseif ( $post_type == 'page' ) {
+        print('
+            <p>
+                If the <em>description</em> field is left blank, a <em>description</em> meta tag will be <strong>automatically</strong> generated from the first paragraph of the content.
+            </p>
+        ');
+    } else {    // Custom post types
         print('
             <p>
                 If the <em>description</em> field is left blank, a <em>description</em> meta tag will be <strong>automatically</strong> generated from the first paragraph of the content.
@@ -549,6 +576,12 @@ function amt_inner_metadata_box( $post ) {
             </p>
         ');
     } elseif ( $post_type == 'page' ) {
+        print('
+            <p>
+                If the <em>keywords</em> field is left blank, a <em>keywords</em> meta tag <strong>will not be automatically</strong> generated.
+            </p>
+        ');
+    } else {    // Custom post types
         print('
             <p>
                 If the <em>keywords</em> field is left blank, a <em>keywords</em> meta tag <strong>will not be automatically</strong> generated.
@@ -595,17 +628,29 @@ function amt_save_postdata( $post_id, $post ) {
     // If a value has not been entered we try to delete existing data from the database
     // If the user has entered data, store it in the database.
 
+    // Add-Meta-Tags custom field names
+    $amt_description_field_name = '_amt_description';
+    $amt_keywords_field_name = '_amt_keywords';
+
     // Description
     if ( empty($description_value) ) {
+        delete_post_meta($post_id, $amt_description_field_name);
+        // Also clean up old description field
         delete_post_meta($post_id, 'description');
     } else {
-        update_post_meta($post_id, 'description', $description_value);
+        update_post_meta($post_id, $amt_description_field_name, $description_value);
+        // Also clean up again old description field - no need to exist any more since the new field is used.
+        delete_post_meta($post_id, 'description');
     }
     // Keywords
     if ( empty($keywords_value) ) {
+        delete_post_meta($post_id, $amt_keywords_field_name);
+        // Also clean up old keywords field
         delete_post_meta($post_id, 'keywords');
     } else {
-        update_post_meta($post_id, 'keywords', $keywords_value);
+        update_post_meta($post_id, $amt_keywords_field_name, $keywords_value);
+        // Also clean up again old keywords field - no need to exist any more since the new field is used.
+        delete_post_meta($post_id, 'keywords');
     }
 
 }
@@ -843,6 +888,64 @@ function amt_get_site_wide_metatags($site_wide_meta) {
 }
 
 
+/**
+ * Helper function that returns the value of the custom field that contains
+ * the content description.
+ * The default field name for the description has changed to ``_amt_description``.
+ * For easy migration this function supports reading the description from the
+ * old ``description`` custom field and also from the custom field of other plugins.
+ */
+function amt_get_post_meta_description($post_id) {
+    $amt_description_field_name = '_amt_description';
+
+    // Get an array of all custom fields names of the post
+    $custom_fields = get_post_custom_keys($post_id);
+
+    // First try our default description field
+    if ( in_array($amt_description_field_name, $custom_fields) ) {
+        return get_post_meta($post_id, $amt_description_field_name, true);
+    }
+    // Try old description field: ``description``
+    elseif ( in_array('description', $custom_fields) ) {
+        return get_post_meta($post_id, 'description', true);
+    }
+    // Try other description field names here.
+    // Support reading from other plugins
+
+    //Return empty string if all fails
+    return '';
+}
+
+
+/**
+ * Helper function that returns the value of the custom field that contains
+ * the content keywords.
+ * The default field name for the keywords has changed to ``_amt_keywords``.
+ * For easy migration this function supports reading the keywords from the
+ * old ``keywords`` custom field and also from the custom field of other plugins.
+ */
+function amt_get_post_meta_keywords($post_id) {
+    $amt_keywords_field_name = '_amt_keywords';
+
+    // Get an array of all custom fields names of the post
+    $custom_fields = get_post_custom_keys($post_id);
+
+    // First try our default keywords field
+    if ( in_array($amt_keywords_field_name, $custom_fields) ) {
+        return get_post_meta($post_id, $amt_keywords_field_name, true);
+    }
+    // Try old keywords field: ``keywords``
+    elseif ( in_array('keywords', $custom_fields) ) {
+        return get_post_meta($post_id, 'keywords', true);
+    }
+    // Try other keywords field names here.
+    // Support reading from other plugins
+
+    //Return empty string if all fails
+    return '';
+}
+
+
 function amt_get_content_description($auto=true) {
     /*
      * This is a helper function that returns the post's or page's description.
@@ -851,17 +954,14 @@ function amt_get_content_description($auto=true) {
 
     $content_description = '';
 
-    if ( is_single() || is_page() ) {
-
-        // Custom description field name
-        $desc_fld = "description";
+    if ( is_single() || is_page() ) {   // is_single() is true for attachments and custom post types too
 
         // The custom post field "description" overrides post's excerpt in Single Post View.
-        $desc_fld_content = get_post_meta($posts[0]->ID, $desc_fld, true);
+        $desc_fld_content = amt_get_post_meta_description( $posts[0]->ID );
         if ( !empty($desc_fld_content) ) {
             // If there is a custom field, use it
             $content_description = amt_clean_desc($desc_fld_content);
-        } elseif ( is_single() || is_page() ) {
+        } else {
             // Else, use the post's excerpt. Valid for Pages too.
             if ($auto) {
                 $content_description = amt_clean_desc(amt_get_the_excerpt());
@@ -878,8 +978,6 @@ function amt_get_content_keywords($auto=true) {
     */
     global $posts;
 
-    $keyw_fld = "keywords";
-
     $content_keywords = '';
 
     /*
@@ -887,8 +985,8 @@ function amt_get_content_keywords($auto=true) {
      * %cats% is replaced by the post's categories.
      * %tags% us replaced by the post's tags.
      */
-    if ( ( is_single()) || is_page() ) {
-        $keyw_fld_content = get_post_meta($posts[0]->ID, $keyw_fld, true);
+    if ( ( is_single()) || is_page() ) {    // is_single() is true for attachments and custom post types too
+        $keyw_fld_content = amt_get_post_meta_keywords( $posts[0]->ID );
         if ( !empty($keyw_fld_content) ) {
             // If there is a custom field, use it
             if ( is_single() ) {
@@ -919,7 +1017,7 @@ function amt_get_content_keywords($auto=true) {
      * Finally, add the global keyword, if they are set in the administration panel.
      * If $content_keywords is empty, then no global keyword processing takes place.
      */
-    if ( !empty($content_keywords) && (is_single() || is_page()) ) {
+    if ( !empty($content_keywords) && (is_single() || is_page()) ) {    // is_single() is true for attachments and custom post types too
         $options = get_option("add_meta_tags_opts");
         $global_keywords = $options["global_keywords"];
         if (!empty($global_keywords)) {
@@ -1189,6 +1287,12 @@ function amt_add_opengraph_metadata() {
             //$metadata_arr[] = '<meta property="og:image:secure_url" content="' . str_replace('http:', 'https:', $thumbnail_info[0]) . '" />';
             $metadata_arr[] = '<meta property="og:image:width" content="' . $thumbnail_info[1] . '" />';
             $metadata_arr[] = '<meta property="og:image:height" content="' . $thumbnail_info[2] . '" />';
+        } elseif ( is_attachment() && wp_attachment_is_image($post->ID) ) { // is attachment page and contains an image
+            $attachment_image_info = wp_get_attachment_image_src( get_post_thumbnail_id($post->ID), 'large' );
+            $metadata_arr[] = '<meta property="og:image" content="' . $attachment_image_info[0] . '" />';
+            //$metadata_arr[] = '<meta property="og:image:secure_url" content="' . str_replace('http:', 'https:', $attachment_image_info[0]) . '" />';
+            $metadata_arr[] = '<meta property="og:image:width" content="' . $attachment_image_info[1] . '" />';
+            $metadata_arr[] = '<meta property="og:image:height" content="' . $attachment_image_info[2] . '" />';
         } elseif (!empty($options["default_image_url"])) {
             // Alternatively, use default image
             $metadata_arr[] = '<meta property="og:image" content="' . trim($options["default_image_url"]) . '" />';
