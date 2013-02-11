@@ -3,7 +3,7 @@
 Plugin Name: Add Meta Tags
 Plugin URI: http://www.g-loaded.eu/2006/01/05/add-meta-tags-wordpress-plugin/
 Description: Adds the <em>Description</em> and <em>Keywords</em> XHTML META tags to your blog's <em>front page</em>, posts, pages, category-based archives and tag-based archives. Also adds <em>Opengraph</em> and <em>Dublin Core</em> metadata on posts and pages.
-Version: 2.1.3
+Version: 2.1.4
 Author: George Notaras
 Author URI: http://www.g-loaded.eu/
 License: Apache License v2
@@ -460,6 +460,10 @@ function amt_options_page() {
         <p>'.__('A <em>description</em> meta tag is automatically generated from the caption or, if a caption has not been set, from the description of the attachment.', 'add-meta-tags').'</p>
         <p>'.__('A <em>keywords</em> meta tag <strong>is not</strong> added to attachment pages.', 'add-meta-tags').'</p>
 
+        <h3>'.__('Metadata on Custom Post Types', 'add-meta-tags').'</h3>
+        <p>'.__('A <em>description</em> meta tag is automatically generated from the first paragraph of the content. No automatic keywords.', 'add-meta-tags').'</p>
+        <p>'.__('It is possible to set a custom <em>description</em> and <em>keywords</em> meta tag by adding a description and a list of keywords in the Metadata metabox in the post editing panel.', 'add-meta-tags').'</p>
+
         <h3>'.__('Metadata on Category and Tag Archives', 'add-meta-tags').'</h3>
         <p>'.__('A <em>description</em> meta tag is automatically added to category-based and tag-based archives, only if a description has been set for that specific category or tag.', 'add-meta-tags').'</p>
         <p>'.__('A <em>keywords</em> meta tag is always added automatically to category-based and tag-based archives. The value of the meta tag is set to the category or tag name respectively.', 'add-meta-tags').'</p>
@@ -901,6 +905,11 @@ function amt_get_post_meta_description($post_id) {
     // Get an array of all custom fields names of the post
     $custom_fields = get_post_custom_keys($post_id);
 
+    // Just return an empty string if no custom fields have been associated with this content.
+    if ( empty($custom_fields) ) {
+        return '';
+    }
+
     // First try our default description field
     if ( in_array($amt_description_field_name, $custom_fields) ) {
         return get_post_meta($post_id, $amt_description_field_name, true);
@@ -929,6 +938,11 @@ function amt_get_post_meta_keywords($post_id) {
 
     // Get an array of all custom fields names of the post
     $custom_fields = get_post_custom_keys($post_id);
+
+    // Just return an empty string if no custom fields have been associated with this content.
+    if ( empty($custom_fields) ) {
+        return '';
+    }
 
     // First try our default keywords field
     if ( in_array($amt_keywords_field_name, $custom_fields) ) {
