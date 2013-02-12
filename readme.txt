@@ -4,7 +4,7 @@ Donate link: http://www.g-loaded.eu/about/donate/
 Tags: meta, metadata, seo, description, keywords, metatag, opengraph, dublin core, google, yahoo, bing, meta tags
 Requires at least: 3.0.0
 Tested up to: 3.5.1
-Stable tag: 2.1.4
+Stable tag: 2.2.0
 
 Adds metadata to your content, including the basic description and keywords meta tags, Opengraph and Dublin Core metadata.
 
@@ -48,6 +48,19 @@ The <em>description</em> and <em>keywords</em> meta tags are added:
  - It is possible to set some keywords that are prepended/appended to the keywords of all your content.
 - Head link to copyright page.
 - Default image to use in metadata, if a featured image has not been set.
+
+**Custom title tag**
+
+It is possible to customize the <em>title</em> tag for posts, pages and any public custom post type.
+
+**'news_keywords' meta tag**
+
+It is possible to set a <code>news_keywords</code> meta tag for posts, pages and any public custom post type. 
+For more info about the <emnews_keywords</em> meta tag, please see this <a target="_blank" href="http://support.google.com/news/publisher/bin/answer.py?hl=en&answer=68297">Google help page</a>.
+
+**Per post full meta tags**
+
+It is possible to assign custom full meta tags to single posts (posts, pages, custom post types).
 
 **Opengraph metadata**
 
@@ -138,6 +151,7 @@ Screenshots as of v2.1.0.
 
 Please check out the changelog of each release by following the links below. You can also check the [roadmap](http://www.codetrax.org/projects/wp-add-meta-tags/roadmap "Add-Meta-Tags Roadmap") regarding future releases of the plugin.
 
+- [2.2.0](http://www.codetrax.org/versions/167) -- New features. Please review settings.
 - [2.1.4](http://www.codetrax.org/versions/171)
 - [2.1.3](http://www.codetrax.org/versions/170)
 - [2.1.2](http://www.codetrax.org/versions/169)

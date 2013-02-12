@@ -3,7 +3,7 @@
 Plugin Name: Add Meta Tags
 Plugin URI: http://www.g-loaded.eu/2006/01/05/add-meta-tags-wordpress-plugin/
 Description: Adds the <em>Description</em> and <em>Keywords</em> XHTML META tags to your blog's <em>front page</em>, posts, pages, category-based archives and tag-based archives. Also adds <em>Opengraph</em> and <em>Dublin Core</em> metadata on posts and pages.
-Version: 2.1.4
+Version: 2.2.0
 Author: George Notaras
 Author URI: http://www.g-loaded.eu/
 License: Apache License v2
@@ -68,7 +68,7 @@ function amt_show_info_msg($msg) {
  */
 function amt_get_default_options() {
     return array(
-        "settings_version"  => 1,       // IMPORTANT: SETTINGS UPGRADE: Every time settings are added or removed this has to be incremented.
+        "settings_version"  => 2,       // IMPORTANT: SETTINGS UPGRADE: Every time settings are added or removed this has to be incremented.
         "site_description"  => "",      // Front page description
         "site_keywords"     => "",      // Front page keywords
         "global_keywords"   => "",      // These keywords are added to the 'keywords' meta tag on all posts and pages
@@ -78,7 +78,11 @@ function amt_get_default_options() {
         "auto_opengraph"    => "0",
         "auto_dublincore"   => "0",
         "noodp_description" => "0",
-        "noindex_archives"  => "0",
+        "noindex_search_results"     => "1",
+        "noindex_date_archives"      => "0",
+        "noindex_category_archives"  => "0",
+        "noindex_tag_archives"       => "0",
+        "noindex_author_archives"    => "0",
         "copyright_url"     => "",
         "default_image_url" => "",
         "i_have_donated"    => "0",
@@ -133,7 +137,9 @@ function amt_plugin_upgrade() {
     // 2) Migrate any current options to new ones.
     // Migration rules should go here.
 
-    // No migrations required.
+    // Version 2.2.0 (settings_version 1->2)
+    // Removed ``noindex_archives``
+    // No migrations required. Clean-up takes place in step (3) below.
 
     // 3) Clean stored options.
     foreach ($stored_options as $opt => $value) {
@@ -160,27 +166,35 @@ function amt_options_page() {
     $default_options = amt_get_default_options();
 
     if (isset($_POST['info_update'])) {
-        /*
-        For a little bit more security and easier maintenance, a separate options array is used.
-        */
+
+        // Update settings
+
+        $add_meta_tags_opts = array();
+
+        foreach ($default_options as $def_key => $def_value) {
+
+            // **Always** use the ``settings_version`` from the defaults
+            if ($def_key == 'settings_version') {
+                $add_meta_tags_opts['settings_version'] = $def_value;
+            }
+
+            // Add options from the POST request (saved by the user)
+            elseif ( array_key_exists($def_key, $_POST) ) {
+                $add_meta_tags_opts[$def_key] = $_POST[$def_key];
+            }
+            
+            // If missing (eg checkboxes), use the default value
+            else {
+                $add_meta_tags_opts[$def_key] = $def_value;
+            }
+        }
+
+        // Finally update the Add-Meta-Tags options.
+        update_option("add_meta_tags_opts", $add_meta_tags_opts);
 
         //var_dump($_POST);
-        update_option("add_meta_tags_opts", array(
-            "settings_version"  => $default_options["settings_version"], // ``settings_version`` is always set to the default. All migrations have already taken place in ``amt_plugin_upgrade()``
-            "site_description"  => $_POST["site_description"],
-            "site_keywords"     => $_POST["site_keywords"],
-            "global_keywords"   => $_POST["global_keywords"],
-            "site_wide_meta"    => $_POST["site_wide_meta"],
-            "auto_description"  => $_POST["auto_description"],
-            "auto_keywords"     => $_POST["auto_keywords"],
-            "auto_opengraph"    => $_POST["auto_opengraph"],
-            "auto_dublincore"   => $_POST["auto_dublincore"],
-            "noodp_description" => $_POST["noodp_description"],
-            "noindex_archives"  => $_POST["noindex_archives"],
-            "copyright_url"     => $_POST["copyright_url"],
-            "default_image_url" => $_POST["default_image_url"],
-            "i_have_donated"    => $_POST["i_have_donated"],
-            ));
+        //var_dump($add_meta_tags_opts);
+
         amt_show_info_msg(__('Add-Meta-Tags options saved', 'add-meta-tags'));
 
     } elseif (isset($_POST["info_reset"])) {
@@ -236,7 +250,58 @@ function amt_options_page() {
 
         <table class="form-table">
         <tbody>
+    ');
 
+    if ( amt_has_page_on_front() ) {
+
+        /* Options:
+
+            Example No pages
+            +-----------+----------------+--------------+----------+
+            | option_id | option_name    | option_value | autoload |
+            +-----------+----------------+--------------+----------+
+            |        58 | show_on_front  | posts        | yes      |
+            |        93 | page_for_posts | 0            | yes      |
+            |        94 | page_on_front  | 0            | yes      |
+            +-----------+----------------+--------------+----------+
+
+            Example pages as front page and posts page
+            +-----------+----------------+--------------+----------+
+            | option_id | option_name    | option_value | autoload |
+            +-----------+----------------+--------------+----------+
+            |        58 | show_on_front  | page         | yes      |
+            |        93 | page_for_posts | 28           | yes      |
+            |        94 | page_on_front  | 25           | yes      |
+            +-----------+----------------+--------------+----------+
+
+        */
+        print('
+            <tr valign="top">
+            <th scope="row">'.__('Front Page Metadata', 'add-meta-tags').'</th>
+            <td>
+            <fieldset>
+                <legend class="screen-reader-text"><span>'.__('Front Page Metadata', 'add-meta-tags').'</span></legend>
+                '.__('It appears that you use static pages on the <em>front</em> page and the <em>posts</em> index of this web site. Please visit the editing panel of these pages and set the <code>description</code> and <code>keywords</code> meta tags in the relevant Metadata box. (since v2.2.0)', 'add-meta-tags').'
+                ');
+                print('<ul>');
+                $front_page_id = get_option('page_on_front');
+                if ( intval($front_page_id) > 0 ) {
+                    print('<li>&raquo; '.__('Edit the', 'add-meta-tags').' <a href="'.get_edit_post_link(intval($front_page_id)).'">'.__('front page', 'add-meta-tags').'</a></li>');
+                }
+                $posts_page_id = get_option('page_for_posts');
+                if ( intval($posts_page_id) > 0 ) {
+                    print('<li>&raquo; '.__('Edit the', 'add-meta-tags').' <a href="'.get_edit_post_link(intval($posts_page_id)).'">'.__('posts page', 'add-meta-tags').'</a></li>');
+                }
+                print('</ul>');
+        print('
+            </fieldset>
+            </td>
+            </tr>
+        ');
+
+    } else {
+
+        print('
             <tr valign="top">
             <th scope="row">'.__('Front Page Description', 'add-meta-tags').'</th>
             <td>
@@ -266,7 +331,10 @@ function amt_options_page() {
             </fieldset>
             </td>
             </tr>
+        ');
+    }
 
+    print('
             <tr valign="top">
             <th scope="row">'.__('Global Keywords', 'add-meta-tags').'</th>
             <td>
@@ -368,12 +436,41 @@ function amt_options_page() {
                 '.__('Add <code>NOODP</code> and <code>NOYDIR</code> to the <em>robots</em> meta tag on the front page, posts and pages. This setting will prevent all search engines (at least those that support the meta tag) from displaying information from the <a href="http://www.dmoz.org/">Open Directory Project</a> or the <a href="http://dir.yahoo.com/">Yahoo Directory</a> instead of the description you set in the <em>description</em> meta tag.', 'add-meta-tags').'
                 </label>
                 <br />
+                <br />
 
-                <input id="noindex_archives" type="checkbox" value="1" name="noindex_archives" '. (($options["noindex_archives"]=="1") ? 'checked="checked"' : '') .'" />
-                <label for="noindex_archives">
-                '.__('Add <code>NOINDEX,FOLLOW</code> to the <em>robots</em> meta tag on time/category/tag/author-based archives and search results. This is an advanced setting that aims at reducing the amount of duplicate content that gets indexed by search engines.', 'add-meta-tags').'
+                '.__('Add <code>NOINDEX,FOLLOW</code> to the <em>robots</em> meta tag on following types of archives. This is an advanced setting that aims at reducing the amount of duplicate content that gets indexed by search engines:', 'add-meta-tags').'
+                <br />
+
+                <input id="noindex_search_results" type="checkbox" value="1" name="noindex_search_results" '. (($options["noindex_search_results"]=="1") ? 'checked="checked"' : '') .'" />
+                <label for="noindex_search_results">
+                '.__('Search results (<em>Highly recommended</em>)', 'add-meta-tags').'
                 </label>
                 <br />
+
+                <input id="noindex_date_archives" type="checkbox" value="1" name="noindex_date_archives" '. (($options["noindex_date_archives"]=="1") ? 'checked="checked"' : '') .'" />
+                <label for="noindex_date_archives">
+                '.__('Date based archives (<em>Recommended</em>)', 'add-meta-tags').'
+                </label>
+                <br />
+
+                <input id="noindex_category_archives" type="checkbox" value="1" name="noindex_category_archives" '. (($options["noindex_category_archives"]=="1") ? 'checked="checked"' : '') .'" />
+                <label for="noindex_category_archives">
+                '.__('Category based archives', 'add-meta-tags').'
+                </label>
+                <br />
+
+                <input id="noindex_tag_archives" type="checkbox" value="1" name="noindex_tag_archives" '. (($options["noindex_tag_archives"]=="1") ? 'checked="checked"' : '') .'" />
+                <label for="noindex_tag_archives">
+                '.__('Tag based archives', 'add-meta-tags').'
+                </label>
+                <br />
+
+                <input id="noindex_author_archives" type="checkbox" value="1" name="noindex_author_archives" '. (($options["noindex_author_archives"]=="1") ? 'checked="checked"' : '') .'" />
+                <label for="noindex_author_archives">
+                '.__('Author based archives', 'add-meta-tags').'
+                </label>
+                <br />
+
             </fieldset>
             </td>
             </tr>
@@ -483,23 +580,11 @@ function amt_options_page() {
 add_action( 'add_meta_boxes', 'amt_add_metadata_box' );
 
 /**
- * Adds a box to the main column of the editing panel of the following built-in
- * post types:
- *
- *   - post
- *   - page
- *
- * And also to ALL public custom post types.
- *
- * NOTE ABOUT attachments:
- * The 'attachment' post type does not support saving custom fields like other post types.
- * See: http://www.codetrax.org/issues/875
- *
+ * Adds a box to the main column of the editing panel of the supported post types.
+ * See the amt_get_supported_post_types() docstring for more info on the supported types.
  */
 function amt_add_metadata_box() {
-    $supported_builtin_types = array('post', 'page');
-    $public_custom_types = get_post_types( array('public'=>true, '_builtin'=>false) );
-    $supported_types = array_merge($supported_builtin_types, $public_custom_types);
+    $supported_types = amt_get_supported_post_types();
 
     // Add an Add-Meta-Tags meta box to all supported types
     foreach ($supported_types as $supported_type) {
@@ -515,6 +600,30 @@ function amt_add_metadata_box() {
 
 }
 
+
+/**
+ * Load CSS and JS for metadata box.
+ * The editing pages are post.php and post-new.php
+ */
+add_action('admin_print_styles-post.php', 'amt_metadata_box_css_js');
+add_action('admin_print_styles-post-new.php', 'amt_metadata_box_css_js');
+
+function amt_metadata_box_css_js () {
+    // $supported_types = amt_get_supported_post_types();
+    // See: #900 for details
+    // wp_enqueue_script('jquery-ui-core');
+    // wp_enqueue_script('jquery-ui-tabs');
+}
+
+
+/* For future reference - Add data to the HEAD area of post editing panel
+add_action('admin_head-post.php', 'amt_js_head');
+add_action('admin_head-post-new.php', 'amt_js_head');
+function amt_js_head() {
+}
+*/
+
+
 /* Prints the box content */
 function amt_inner_metadata_box( $post ) {
 
@@ -524,13 +633,13 @@ function amt_inner_metadata_box( $post ) {
     // Get the post type. Will be used to customize the displayed notes.
     $post_type = get_post_type( $post->ID );
 
-    // Retrieve the field data from the database.
-    $custom_description_value = amt_get_post_meta_description( $post->ID );
-    $custom_keywords_value = amt_get_post_meta_keywords( $post->ID );
-
     // Display the meta box HTML code.
 
     // Custom description
+    
+    // Retrieve the field data from the database.
+    $custom_description_value = amt_get_post_meta_description( $post->ID );
+
     print('
         <p>
             <label for="amt_custom_description">'.__('Description', 'add-meta-tags').':</label>
@@ -561,6 +670,10 @@ function amt_inner_metadata_box( $post ) {
     }
 
     // Custom keywords
+
+    // Retrieve the field data from the database.
+    $custom_keywords_value = amt_get_post_meta_keywords( $post->ID );
+
     // Alt input:  <input type="text" class="code" style="width: 99%" id="amt_custom_keywords" name="amt_custom_keywords" value="'.$custom_keywords_value.'" />
     print('
         <p>
@@ -593,6 +706,50 @@ function amt_inner_metadata_box( $post ) {
         ');
     }
 
+    // Advanced options
+
+    // Custom title tag
+
+    // Retrieve the field data from the database.
+    $custom_title_value = amt_get_post_meta_title( $post->ID );
+
+    print('
+        <p>
+            <label for="amt_custom_title">'.__('Title', 'add-meta-tags').':</label>
+            <input type="text" class="code" style="width: 99%" id="amt_custom_title" name="amt_custom_title" value="'.$custom_title_value.'" />
+            <br>
+            Enter a custom title to be used in the <em>title</em> tag. <code>%title%</code> is expanded to the current title.
+        </p>
+    ');
+
+    // 'news_keywords' meta tag
+    
+    // Retrieve the field data from the database.
+    $custom_newskeywords_value = amt_get_post_meta_newskeywords( $post->ID );
+
+    print('
+        <p>
+            <label for="amt_custom_newskeywords">'.__('News Keywords', 'add-meta-tags').':</label>
+            <input type="text" class="code" style="width: 99%" id="amt_custom_newskeywords" name="amt_custom_newskeywords" value="'.$custom_newskeywords_value.'" />
+            <br>
+            Enter a comma-delimited list of <strong>news keywords</strong>. For more info about this meta tag, please see this <a target="_blank" href="http://support.google.com/news/publisher/bin/answer.py?hl=en&answer=68297">Google help page</a>.
+        </p>
+    ');
+
+    // per post full meta tags
+    
+    // Retrieve the field data from the database.
+    $custom_full_metatags_value = amt_get_post_meta_full_metatags( $post->ID );
+
+    print('
+        <p>
+            <label for="amt_custom_full_metatags">'.__('Full meta tags', 'add-meta-tags').':</label>
+            <textarea class="code" style="width: 99%" id="amt_custom_full_metatags" name="amt_custom_full_metatags" cols="30" rows="2" >'.$custom_full_metatags_value.'</textarea>
+            <br>
+            Enter full meta tags specific to this content.
+        </p>
+    ');
+
 }
 
 
@@ -610,7 +767,7 @@ function amt_save_postdata( $post_id, $post ) {
     /* Verify the nonce before proceeding. */
     // Verify this came from the our screen and with proper authorization,
     // because save_post can be triggered at other times
-    if ( !wp_verify_nonce( $_POST['amt_noncename'], plugin_basename( __FILE__ ) ) )
+    if ( !isset($_POST['amt_noncename']) || !wp_verify_nonce( $_POST['amt_noncename'], plugin_basename( __FILE__ ) ) )
         return;
 
     /* Get the post type object. */
@@ -628,6 +785,9 @@ function amt_save_postdata( $post_id, $post ) {
     // $keywords_value = sanitize_text_field( $_POST['amt_custom_keywords'] );
     $description_value = $_POST['amt_custom_description'];
     $keywords_value = $_POST['amt_custom_keywords'];
+    $title_value = $_POST['amt_custom_title'];
+    $newskeywords_value = $_POST['amt_custom_newskeywords'];
+    $full_metatags_value = $_POST['amt_custom_full_metatags'];
 
     // If a value has not been entered we try to delete existing data from the database
     // If the user has entered data, store it in the database.
@@ -635,6 +795,9 @@ function amt_save_postdata( $post_id, $post ) {
     // Add-Meta-Tags custom field names
     $amt_description_field_name = '_amt_description';
     $amt_keywords_field_name = '_amt_keywords';
+    $amt_title_field_name = '_amt_title';
+    $amt_newskeywords_field_name = '_amt_news_keywords';
+    $amt_full_metatags_field_name = '_amt_full_metatags';
 
     // Description
     if ( empty($description_value) ) {
@@ -646,6 +809,7 @@ function amt_save_postdata( $post_id, $post ) {
         // Also clean up again old description field - no need to exist any more since the new field is used.
         delete_post_meta($post_id, 'description');
     }
+
     // Keywords
     if ( empty($keywords_value) ) {
         delete_post_meta($post_id, $amt_keywords_field_name);
@@ -657,6 +821,27 @@ function amt_save_postdata( $post_id, $post ) {
         delete_post_meta($post_id, 'keywords');
     }
 
+    // Title
+    if ( empty($title_value) ) {
+        delete_post_meta($post_id, $amt_title_field_name);
+    } else {
+        update_post_meta($post_id, $amt_title_field_name, $title_value);
+    }
+
+    // 'news_keywords'
+    if ( empty($newskeywords_value) ) {
+        delete_post_meta($post_id, $amt_newskeywords_field_name);
+    } else {
+        update_post_meta($post_id, $amt_newskeywords_field_name, $newskeywords_value);
+    }
+
+    // per post full meta tags
+    if ( empty($full_metatags_value) ) {
+        delete_post_meta($post_id, $amt_full_metatags_field_name);
+    } else {
+        update_post_meta($post_id, $amt_full_metatags_field_name, $full_metatags_value);
+    }
+    
 }
 
 
@@ -893,6 +1078,27 @@ function amt_get_site_wide_metatags($site_wide_meta) {
 
 
 /**
+ * Helper function that returns an array containing the post types that are
+ * supported by Add-Meta-Tags. These include:
+ *
+ *   - post
+ *   - page
+ *
+ * And also to ALL public custom post types which have a UI.
+ *
+ * NOTE ABOUT attachments:
+ * The 'attachment' post type does not support saving custom fields like other post types.
+ * See: http://www.codetrax.org/issues/875
+ */
+function amt_get_supported_post_types() {
+    $supported_builtin_types = array('post', 'page');
+    $public_custom_types = get_post_types( array('public'=>true, '_builtin'=>false, 'show_ui'=>true) );
+    $supported_types = array_merge($supported_builtin_types, $public_custom_types);
+    return $supported_types;
+}
+
+
+/**
  * Helper function that returns the value of the custom field that contains
  * the content description.
  * The default field name for the description has changed to ``_amt_description``.
@@ -957,6 +1163,108 @@ function amt_get_post_meta_keywords($post_id) {
 
     //Return empty string if all fails
     return '';
+}
+
+
+/**
+ * Helper function that returns the value of the custom field that contains
+ * the custom content title.
+ * The default field name for the title is ``_amt_title``.
+ * No need to migrate from older field name.
+ */
+function amt_get_post_meta_title($post_id) {
+    $amt_title_field_name = '_amt_title';
+
+    // Get an array of all custom fields names of the post
+    $custom_fields = get_post_custom_keys($post_id);
+
+    // Just return an empty string if no custom fields have been associated with this content.
+    if ( empty($custom_fields) ) {
+        return '';
+    }
+
+    // First try our default title field
+    if ( in_array($amt_title_field_name, $custom_fields) ) {
+        return get_post_meta($post_id, $amt_title_field_name, true);
+    }
+    
+    // Try other title field names here.
+    // Support reading from other plugins
+
+    //Return empty string if all fails
+    return '';
+}
+
+
+/**
+ * Helper function that returns the value of the custom field that contains
+ * the 'news_keywords' value.
+ * The default field name for the 'news_keywords' is ``_amt_news_keywords``.
+ * No need to migrate from older field name.
+ */
+function amt_get_post_meta_newskeywords($post_id) {
+    $amt_newskeywords_field_name = '_amt_news_keywords';
+
+    // Get an array of all custom fields names of the post
+    $custom_fields = get_post_custom_keys($post_id);
+
+    // Just return an empty string if no custom fields have been associated with this content.
+    if ( empty($custom_fields) ) {
+        return '';
+    }
+
+    // First try our default 'news_keywords' field
+    if ( in_array($amt_newskeywords_field_name, $custom_fields) ) {
+        return get_post_meta($post_id, $amt_newskeywords_field_name, true);
+    }
+    
+    // Try other 'news_keywords' field names here.
+    // Support reading from other plugins
+
+    //Return empty string if all fails
+    return '';
+}
+
+
+/**
+ * Helper function that returns the value of the custom field that contains
+ * the per-post full metatags.
+ * The default field name is ``_amt_full_metatags``.
+ * No need to migrate from older field name.
+ */
+function amt_get_post_meta_full_metatags($post_id) {
+    $amt_full_metatags_field_name = '_amt_full_metatags';
+
+    // Get an array of all custom fields names of the post
+    $custom_fields = get_post_custom_keys($post_id);
+
+    // Just return an empty string if no custom fields have been associated with this content.
+    if ( empty($custom_fields) ) {
+        return '';
+    }
+
+    // First try our default 'full_metatags' field
+    if ( in_array($amt_full_metatags_field_name, $custom_fields) ) {
+        return get_post_meta($post_id, $amt_full_metatags_field_name, true);
+    }
+    
+    // Try other 'full_metatags' field names here.
+    // Support reading from other plugins
+
+    //Return empty string if all fails
+    return '';
+}
+
+
+/** Helper function that returns true if a page is used as the homepage
+ * instead of the posts index page.
+ */
+function amt_has_page_on_front() {
+    $front_type = get_option('show_on_front', 'posts');
+    if ( $front_type == 'page' ) {
+        return true;
+    }
+    return false;
 }
 
 
@@ -1084,7 +1392,7 @@ function amt_add_meta_tags() {
      * Basic Meta tags
      */
 
-    if ( is_front_page() ) {
+    if ( !amt_has_page_on_front() && is_front_page() ) {    // Enters only if posts are used as the front page.
         /*
          * Add META tags to Home Page
          * Description and Keywords from the Add-Meta-Tags settings override default behaviour
@@ -1134,6 +1442,18 @@ function amt_add_meta_tags() {
         $keywords = amt_get_content_keywords($auto=$do_auto_keywords);
         if (!empty($keywords)) {
             $metadata_arr[] = '<meta name="keywords" content="' . amt_strtolower($keywords) . '" />';
+        }
+
+        // 'news_keywords'
+        $newskeywords = amt_get_post_meta_newskeywords( $posts[0]->ID );
+        if (!empty($newskeywords)) {
+            $metadata_arr[] = '<meta name="news_keywords" content="' . $newskeywords . '" />';
+        }
+
+        // per post full meta tags
+        $full_metatags_for_content = amt_get_post_meta_full_metatags( $posts[0]->ID );
+        if (!empty($full_metatags_for_content)) {
+            $metadata_arr[] = $full_metatags_for_content;
         }
 
 
@@ -1256,7 +1576,7 @@ function amt_add_opengraph_metadata() {
 
     $metadata_arr = array();
 
-    if ( is_front_page() ) {
+    if ( !amt_has_page_on_front() && is_front_page() ) {    // Enters only if posts are used as the front page.
 
         $metadata_arr[] = '<meta property="og:title" content="' . amt_process_paged(get_bloginfo('name')) . '" />';
         $metadata_arr[] = '<meta property="og:type" content="website" />';
@@ -1344,6 +1664,20 @@ function amt_add_opengraph_metadata() {
 }
 
 
+
+/**
+ * Dublin Core helper functions
+ */
+function amt_get_dublin_core_author_notation($post) {
+    $last_name = get_the_author_meta('last_name', $post->post_author);
+    $first_name = get_the_author_meta('first_name', $post->post_author);
+    if ( empty($last_name) && empty($first_name) ) {
+        return get_the_author_meta('display_name', $post->post_author);
+    }
+    return $last_name . ', ' . $first_name;
+}
+
+
 /**
  * Dublin Core metadata on posts and pages
  * http://dublincore.org/documents/dcmi-terms/
@@ -1369,7 +1703,7 @@ function amt_add_dublin_core_metadata() {
     $metadata_arr = array();
     $metadata_arr[] = '<meta name="dcterms.identifier" scheme="dcterms.uri" content="' . get_permalink() . '" />';
     $metadata_arr[] = '<meta name="dc.title" content="' . single_post_title('', FALSE) . '" />';
-    $metadata_arr[] = '<meta name="dc.creator" content="' . get_the_author_meta('last_name', $post->post_author) . ', ' . get_the_author_meta('first_name', $post->post_author) . '" />';
+    $metadata_arr[] = '<meta name="dc.creator" content="' . amt_get_dublin_core_author_notation($post) . '" />';
     $metadata_arr[] = '<meta name="dc.date" scheme="dc.w3cdtf" content="' . get_the_time('c') . '" />';
     // We use the same description as the ``description`` meta tag.
     $content_desc = amt_get_content_description();
@@ -1429,24 +1763,57 @@ function amt_add_dublin_core_metadata() {
 
 
 /*
-Actions
+Final
 */
+
+/**
+ * Uses the custom title, if one has been set.
+ */
+function amt_custom_title_tag($title) {
+    global $posts;
+
+    if ( is_single() || is_page() ) {   // is_single() is true for attachments and custom post types
+        $custom_title = amt_get_post_meta_title( $posts[0]->ID );
+        if ( !empty($custom_title) ) {
+            $custom_title = str_replace('%title%', $title, $custom_title);
+            return $custom_title;
+        }
+    }
+
+    return $title;
+}
+add_filter('wp_title', 'amt_custom_title_tag');
+
+
 function amt_add_metadata() {
 
     // Get the options the DB
     $options = get_option("add_meta_tags_opts");
-    $do_noindex_archives = (($options["noindex_archives"] == "1") ? true : false );
+    $do_add_metadata = true;
 
     $metadata_arr = array();
     $metadata_arr[] = "";
     $metadata_arr[] = "<!-- BEGIN Metadata added by Add-Meta-Tags WordPress plugin";
     $metadata_arr[] = "Get the plugin at: http://www.g-loaded.eu/2006/01/05/add-meta-tags-wordpress-plugin/ -->";
+
     // Check for NOINDEX,FOLLOW on archives.
     // There is no need to further process metadata as we explicitly ask search
     // engines not to index the content.
-    if ( $do_noindex_archives && (is_archive() || is_search()) ) {
-        $metadata_arr[] = '<meta name="robots" content="NOINDEX,FOLLOW" />';
-    } else {
+    if ( is_archive() || is_search() ) {
+        if (
+            ( is_search() && ($options["noindex_search_results"] == "1") )  ||          // Search results
+            ( is_date() && ($options["noindex_date_archives"] == "1") )  ||             // Date and time archives
+            ( is_category() && ($options["noindex_category_archives"] == "1") )  ||     // Category archives
+            ( is_tag() && ($options["noindex_tag_archives"] == "1") )  ||               // Tag archives
+            ( is_author() && ($options["noindex_author_archives"] == "1") )             // Author archives
+        ) {
+            $metadata_arr[] = '<meta name="robots" content="NOINDEX,FOLLOW" />';
+            $do_add_metadata = false;   // No need to process metadata
+        }
+    }
+
+    // Add Metadata
+    if ($do_add_metadata) {
         // Basic Meta tags
         $metadata_arr = array_merge($metadata_arr, amt_add_meta_tags());
         //var_dump(amt_add_meta_tags());
