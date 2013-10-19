@@ -5,20 +5,6 @@
 
 
 /**
- * Settings Link in the ``Installed Plugins`` page
- */
-function amt_plugin_actions( $links, $file ) {
-    if( $file == plugin_basename(__FILE__) && function_exists( "admin_url" ) ) {
-        $settings_link = '<a href="' . admin_url( 'options-general.php?page=add-meta-tags-options' ) . '">' . __('Settings') . '</a>';
-        // Add the settings link before other links
-        array_unshift( $links, $settings_link );
-    }
-    return $links;
-}
-add_filter( 'plugin_action_links', 'amt_plugin_actions', 10, 2 );
-
-
-/**
  * Administration Panel - Add-Meta-Tags Settings
  */
 
@@ -254,6 +240,10 @@ function amt_options_page() {
                 <label for="auto_opengraph">
                 '.__('Automatically generate Opengraph meta tags for single posts and pages. For more information, please refer to the <a href="http://ogp.me">Opengraph specification</a>.', 'add-meta-tags').'
                 </label>
+                <br />
+                <strong>'.__('Important Note', 'add-meta-tags').'</strong>:
+                <br />
+                '.__('In order to generate the <code>article:author</code> and <code>article:publisher</code> meta tags for your content, it is required to provide the respective URLs of the Facebook profiles of the author and/or publisher of the content. Update your WordPress user\'s <a href="/wp-admin/profile.php">profile page</a> and fill in the relevant URLs under the section \'Contact Info\'.', 'add-meta-tags').'
                 <br />
             </fieldset>
             </td>
@@ -627,7 +617,7 @@ function amt_inner_metadata_box( $post ) {
     print('
         <p>
             <label for="amt_custom_full_metatags">'.__('Full meta tags', 'add-meta-tags').':</label>
-            <textarea class="code" style="width: 99%" id="amt_custom_full_metatags" name="amt_custom_full_metatags" cols="30" rows="2" >'.$custom_full_metatags_value.'</textarea>
+            <textarea class="code" style="width: 99%" id="amt_custom_full_metatags" name="amt_custom_full_metatags" cols="30" rows="2" >'. stripslashes($custom_full_metatags_value) .'</textarea>
             <br>
             '.__('Enter full meta tags specific to this content.', 'add-meta-tags').'
         </p>
@@ -664,7 +654,9 @@ function amt_save_postdata( $post_id, $post ) {
 
     // OK, we're authenticated: we need to find and save the data
 
+    //
     // Sanitize user input
+    //
     // $description_value = sanitize_text_field( $_POST['amt_custom_description'] );
     // TODO: sanitize removes '%ca' part of '%cats%'
     // $keywords_value = sanitize_text_field( $_POST['amt_custom_keywords'] );
@@ -672,7 +664,8 @@ function amt_save_postdata( $post_id, $post ) {
     $keywords_value = $_POST['amt_custom_keywords'];
     $title_value = $_POST['amt_custom_title'];
     $newskeywords_value = $_POST['amt_custom_newskeywords'];
-    $full_metatags_value = $_POST['amt_custom_full_metatags'];
+    // Full metatags
+    $full_metatags_value = esc_textarea( stripslashes( wp_kses( $_POST['amt_custom_full_metatags'], get_allowed_html_kses() ) ) );
 
     // If a value has not been entered we try to delete existing data from the database
     // If the user has entered data, store it in the database.

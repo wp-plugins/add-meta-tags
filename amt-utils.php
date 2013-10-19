@@ -5,6 +5,25 @@
 
 
 /**
+ * Helper function that returns an array of allowable HTML elements and attributes
+ * for use in wp_kses() function.
+ */
+function get_allowed_html_kses() {
+    return array(
+        'meta' => array(
+            'charset' => array(),
+            'content' => array(),
+            'http-equiv' => array(),
+            'name' => array(),
+            'scheme' => array(),
+            'itemprop' => array(),  // schema.org
+            'property' => array(),  // facebook and others
+        )
+    );
+}
+
+
+/**
  * Helper function that converts $text to lowercase.
  * If the mbstring php plugin exists, then the string functions provided by that
  * plugin are used.
@@ -350,15 +369,19 @@ function amt_get_video_url() {
     global $post;
 
     // Youtube
-    $pattern = '#youtube.com/watch\?v=([-|~_0-9A-Za-z]+)#';
+    //$pattern = '#youtube.com/watch\?v=([-|~_0-9A-Za-z]+)#';
+    $pattern = '#http:\/\/(?:www.)?youtube.com\/.*v=(\w*)#';
     if ( preg_match($pattern, $post->post_content, $matches) ) {
         return 'http://youtube.com/v/' . $matches[1];
     }
 
     // Vimeo
-    $pattern = '#vimeo.com/([-|~_0-9A-Za-z]+)#';
+    //$pattern = '#vimeo.com/([-|~_0-9A-Za-z]+)#';
+    $pattern = '#http:\/\/(?:www.)?vimeo.com\/(\d*)#';
     if ( preg_match($pattern, $post->post_content, $matches) ) {
-        return 'http://vimeo.com/couchmode/' . $matches[1];
+        //return 'http://vimeo.com/couchmode/' . $matches[1];
+        //return 'http://vimeo.com/moogaloop.swf?clip_id=' . $matches[1];
+        return 'http://player.vimeo.com/video/' . $matches[1];
     }
 
     return '';

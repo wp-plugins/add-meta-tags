@@ -3,7 +3,7 @@
 Plugin Name: Add Meta Tags
 Plugin URI: http://www.g-loaded.eu/2006/01/05/add-meta-tags-wordpress-plugin/
 Description: Adds the <em>Description</em> and <em>Keywords</em> XHTML META tags to your blog's <em>front page</em>, posts, pages, category-based archives and tag-based archives. Also adds <em>Opengraph</em> and <em>Dublin Core</em> metadata on posts and pages.
-Version: 2.3.0
+Version: 2.3.1
 Author: George Notaras
 Author URI: http://www.g-loaded.eu/
 License: Apache License v2
@@ -44,6 +44,18 @@ require_once(AMT_DIR.'/amt-template-tags.php');
 load_plugin_textdomain('add-meta-tags', false, dirname( plugin_basename( __FILE__ ) ) . '/languages/');
 
 
+/**
+ * Settings Link in the ``Installed Plugins`` page
+ */
+function amt_plugin_actions( $links, $file ) {
+    if( $file == plugin_basename(__FILE__) && function_exists( "admin_url" ) ) {
+        $settings_link = '<a href="' . admin_url( 'options-general.php?page=add-meta-tags-options' ) . '">' . __('Settings') . '</a>';
+        // Add the settings link before other links
+        array_unshift( $links, $settings_link );
+    }
+    return $links;
+}
+add_filter( 'plugin_action_links', 'amt_plugin_actions', 10, 2 );
 
 
 //
@@ -214,16 +226,6 @@ function amt_get_all_categories($no_uncategorized = TRUE) {
         $all_cats = amt_strtolower(rtrim($all_cats, " ,"));
         return $all_cats;
     }
-}
-
-
-/**
- * This is a filter for the site-wide meta tags.
- */
-function amt_get_site_wide_metatags($site_wide_meta) {
-    $site_wide_meta = stripslashes($site_wide_meta);
-    $site_wide_meta = trim($site_wide_meta);
-    return $site_wide_meta;
 }
 
 
@@ -411,7 +413,7 @@ function amt_add_meta_tags( $post ) {
         // per post full meta tags
         $full_metatags_for_content = amt_get_post_meta_full_metatags( $post->ID );
         if (!empty($full_metatags_for_content)) {
-            $metadata_arr[] = $full_metatags_for_content;
+            $metadata_arr[] = html_entity_decode( stripslashes( $full_metatags_for_content ) );
         }
 
 
@@ -460,7 +462,7 @@ function amt_add_meta_tags( $post ) {
 
     // Add site wide meta tags
     if (!empty($options["site_wide_meta"])) {
-        $metadata_arr[] = amt_get_site_wide_metatags($options["site_wide_meta"]);
+        $metadata_arr[] = html_entity_decode( stripslashes( $options["site_wide_meta"] ) );
     }
 
     // On every page print the copyright head link
@@ -473,10 +475,36 @@ function amt_add_meta_tags( $post ) {
 
 
 /**
- * Opengraph metadata on posts and pages
+ * Opengraph metadata
  * Opengraph Specification: http://ogp.me
  */
 
+/**
+ * Add contact method for Facebook author and publisher.
+ */
+function amt_add_facebook_contactmethod( $contactmethods ) {
+    // Add Facebook Author Profile URL
+    if ( !isset( $contactmethods['amt_facebook_author_profile_url'] ) ) {
+        $contactmethods['amt_facebook_author_profile_url'] = 'Facebook Author Profile URL';
+    }
+    // Add Facebook Publisher Profile URL
+    if ( !isset( $contactmethods['amt_facebook_publisher_profile_url'] ) ) {
+        $contactmethods['amt_facebook_publisher_profile_url'] = 'Facebook Publisher Profile URL';
+    }
+
+    // Remove test
+    // if ( isset( $contactmethods['test'] ) {
+    //     unset( $contactmethods['test'] );
+    // }
+
+    return $contactmethods;
+}
+add_filter( 'user_contactmethods', 'amt_add_facebook_contactmethod', 10, 1 );
+
+
+/**
+ * Add Opengraph metadata for site and content.
+ */
 function amt_add_opengraph_metadata( $post ) {
 
     // Get the options the DB
@@ -565,12 +593,22 @@ function amt_add_opengraph_metadata( $post ) {
             $metadata_arr[] = '<meta property="article:published_time" content="' . amt_iso8601_date($post->post_date) . '" />';
             $metadata_arr[] = '<meta property="article:modified_time" content="' . amt_iso8601_date($post->post_modified) . '" />';
 
+            // Author and Publisher
+            $fb_author_url = get_the_author_meta('amt_facebook_author_profile_url', $post->post_author);
+            if ( !empty($fb_author_url) ) {
+                $metadata_arr[] = '<meta property="article:author" content="' . esc_url( $fb_author_url, array('http', 'https', 'mailto') ) . '" />';
+            }
+            $fb_publisher_url = get_the_author_meta('amt_facebook_publisher_profile_url', $post->post_author);
+            if ( !empty($fb_publisher_url) ) {
+                $metadata_arr[] = '<meta property="article:publisher" content="' . esc_url( $fb_publisher_url, array('http', 'https', 'mailto') ) . '" />';
+            }
+
             // article:section: We use the first category as the section
             $first_cat = amt_get_first_category($post);
             if (!empty($first_cat)) {
                 $metadata_arr[] = '<meta property="article:section" content="' . $first_cat . '" />';
             }
-            $metadata_arr[] = '<meta property="article:author" content="' . get_the_author_meta('display_name', $post->post_author) . '" />';
+            
             // article:tag: Keywords are listed as post tags
             $keywords = explode(', ', amt_get_content_keywords($post));
             foreach ($keywords as $tag) {
