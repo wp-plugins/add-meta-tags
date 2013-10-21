@@ -4,11 +4,13 @@
  */
 
 
+
+
 /**
  * Helper function that returns an array of allowable HTML elements and attributes
  * for use in wp_kses() function.
  */
-function get_allowed_html_kses() {
+function amt_get_allowed_html_kses() {
     return array(
         'meta' => array(
             'charset' => array(),
@@ -24,40 +26,298 @@ function get_allowed_html_kses() {
 
 
 /**
- * Helper function that converts $text to lowercase.
- * If the mbstring php plugin exists, then the string functions provided by that
- * plugin are used.
+ * Sanitizes text for use in the description and similar metatags.
+ *
+ * Currently:
+ * - removes shortcodes
+ * - removes double quotes
+ * - convert single quotes to space
  */
-function amt_strtolower($text) {
+function amt_sanitize_description($desc) {
+
+    // Remove shortcode
+    // Needs to be before cleaning double quotes as it may contain quoted settings.
+    $pattern = get_shortcode_regex();
+    //var_dump($pattern);
+    $desc = preg_replace('#' . $pattern . '#s', '', $desc);
+
+    // Clean double quotes
+    $desc = str_replace('"', '', $desc);
+    $desc = str_replace('&quot;', '', $desc);
+
+    // Convert single quotes to space
+    $desc = str_replace("'", ' ', $desc);
+    $desc = str_replace('&#039;', ' ', $desc);
+    $desc = str_replace("&apos;", ' ', $desc);
+
+    return $desc;
+}
+
+
+/**
+ * Sanitizes text for use in the 'keywords' or similar metatags.
+ *
+ * Currently:
+ * - converts to lowercase
+ * - removes double quotes
+ * - convert single quotes to space
+ */
+function amt_sanitize_keywords( $text ) {
+
+    // Convert to lowercase
     if (function_exists('mb_strtolower')) {
-        return mb_strtolower($text, get_bloginfo('charset'));
+        $text = mb_strtolower($text, get_bloginfo('charset'));
     } else {
-        return strtolower($text);
+        $text = strtolower($text);
+    }
+
+    // Clean double quotes
+    $text = str_replace('"', '', $text);
+    $text = str_replace('&quot;', '', $text);
+
+    // Convert single quotes to space
+    $text = str_replace("'", ' ', $text);
+    $text = str_replace('&#039;', ' ', $text);
+    $text = str_replace("&apos;", ' ', $text);
+
+    return $text;
+}
+
+
+/**
+ * Helper function that converts the placeholders used by Add-Meta-Tags
+ * to a form, in which they remain unaffected by the sanitization functions.
+ *
+ * Currently the problem is the '%ca' part of '%cats%' which is removed
+ * by sanitize_text_field().
+ */
+function amt_convert_placeholders( $data ) {
+    $data = str_replace('%cats%', '#cats#', $data);
+    $data = str_replace('%tags%', '#tags#', $data);
+    $data = str_replace('%contentkw%', '#contentkw#', $data);
+    $data = str_replace('%title%', '#title#', $data);
+    return $data;
+}
+
+
+/**
+ * Helper function that reverts the placeholders used by Add-Meta-Tags
+ * back to their original form. This action should be performed after
+ * after the sanitization functions have processed the data.
+ */
+function amt_revert_placeholders( $data ) {
+    $data = str_replace('#cats#', '%cats%', $data);
+    $data = str_replace('#tags#', '%tags%', $data);
+    $data = str_replace('#contentkw#', '%contentkw%', $data);
+    $data = str_replace('#title#', '%title%', $data);
+    return $data;
+}
+
+
+function amt_get_content_keywords_mesh( $post ) {
+    // Keywords returned in the form: keyword1;keyword2;keyword3
+    $keywords = explode(', ', amt_get_content_keywords($post));
+    return implode(';', $keywords);
+}
+
+
+/**
+ * This function is meant to be used in order to append information about the
+ * current page to the description or the title of the content.
+ *
+ * Works on both:
+ * 1. paged archives or main blog page
+ * 2. multipage content
+ */
+function amt_process_paged( $data ) {
+
+    if ( !empty( $data ) ) {
+
+        $data_to_append = ' | Page ';
+        //TODO: Check if it should be translatable
+        //$data_to_append = ' | ' . __('Page', 'add-meta-tags') . ' ';
+
+        // Allowing filtering of the $data_to_append
+        $data_to_append = apply_filters( 'amt_paged_append_data', $data_to_append );
+
+        // For paginated archives or paginated main page with latest posts.
+        if ( is_paged() ) {
+            $paged = get_query_var( 'paged' );  // paged
+            if ( $paged && $paged >= 2 ) {
+                return $data . $data_to_append . $paged;
+            }
+        // For a Post or PAGE Page that has been divided into pages using the <!--nextpage--> QuickTag
+        } else {
+            $paged = get_query_var( 'page' );  // page
+            if ( $paged && $paged >= 2 ) {
+                return $data . $data_to_append . $paged;
+            }
+        }
+    }
+    return $data;
+}
+
+
+/**
+ * Returns the post's excerpt.
+ * This function was written in order to get the excerpt *outside* the loop
+ * because the get_the_excerpt() function does not work there any more.
+ * This function makes the retrieval of the excerpt independent from the
+ * WordPress function in order not to break compatibility with older WP versions.
+ *
+ * Also, this is even better as the algorithm tries to get text of average
+ * length 250 characters, which is more SEO friendly. The algorithm is not
+ * perfect, but will do for now.
+ */
+function amt_get_the_excerpt( $post, $excerpt_max_len=300, $desc_avg_length=250, $desc_min_length=150 ) {
+    
+    if ( empty($post->post_excerpt) ) {
+
+        // Get the initial data for the excerpt
+        $amt_excerpt = strip_tags(substr($post->post_content, 0, $excerpt_max_len));
+
+        // If this was not enough, try to get some more clean data for the description (nasty hack)
+        if ( strlen($amt_excerpt) < $desc_avg_length ) {
+            $amt_excerpt = strip_tags(substr($post->post_content, 0, (int) ($excerpt_max_len * 1.5)));
+            if ( strlen($amt_excerpt) < $desc_avg_length ) {
+                $amt_excerpt = strip_tags(substr($post->post_content, 0, (int) ($excerpt_max_len * 2)));
+            }
+        }
+
+        $end_of_excerpt = strrpos($amt_excerpt, ".");
+
+        if ($end_of_excerpt) {
+            
+            // if there are sentences, end the description at the end of a sentence.
+            $amt_excerpt_test = substr($amt_excerpt, 0, $end_of_excerpt + 1);
+
+            if ( strlen($amt_excerpt_test) < $desc_min_length ) {
+                // don't end at the end of the sentence because the description would be too small
+                $amt_excerpt .= "...";
+            } else {
+                // If after ending at the end of a sentence the description has an acceptable length, use this
+                $amt_excerpt = $amt_excerpt_test;
+            }
+        } else {
+            // otherwise (no end-of-sentence in the excerpt) add this stuff at the end of the description.
+            $amt_excerpt .= "...";
+        }
+
+    } else {
+        // When the post excerpt has been set explicitly, then it has priority.
+        $amt_excerpt = $post->post_excerpt;
+    }
+
+    /**
+     * In some cases, the algorithm might not work, depending on the content.
+     * In those cases, $amt_excerpt might only contain ``...``. Here we perform
+     * a check for this and return an empty $amt_excerpt.
+     */
+    if ($amt_excerpt == "...") {
+        $amt_excerpt = "";
+    }
+
+    /**
+     * Allow filtering of the generated excerpt.
+     *
+     * Filter with:
+     *
+     *  function customize_amt_excerpt( $post ) {
+     *      $amt_excerpt = ...
+     *      return $amt_excerpt;
+     *  }
+     *  add_filter( 'amt_get_the_excerpt', 'customize_amt_excerpt', 10, 1 );
+     */
+    $amt_excerpt = apply_filters( 'amt_get_the_excerpt', $amt_excerpt, $post );
+
+    return $amt_excerpt;
+}
+
+
+/**
+ * Returns a comma-delimited list of a post's categories.
+ */
+function amt_get_keywords_from_post_cats( $post ) {
+
+    $postcats = "";
+    foreach((get_the_category($post->ID)) as $cat) {
+        $postcats .= $cat->cat_name . ', ';
+    }
+    // strip final comma
+    $postcats = substr($postcats, 0, -2);
+
+    return $postcats;
+}
+
+
+/**
+ * Helper function. Returns the first category the post belongs to.
+ */
+function amt_get_first_category( $post ) {
+    $cats = amt_get_keywords_from_post_cats( $post );
+    $bits = explode(',', $cats);
+    if (!empty($bits)) {
+        return $bits[0];
+    }
+    return '';
+}
+
+
+/**
+ * Retrieves the post's user-defined tags.
+ *
+ * This will only work in WordPress 2.3 or newer. On older versions it will
+ * return an empty string.
+ */
+function amt_get_post_tags( $post ) {
+
+    if ( version_compare( get_bloginfo('version'), '2.3', '>=' ) ) {
+        $tags = get_the_tags($post->ID);
+        if ( empty( $tags ) ) {
+            return false;
+        } else {
+            $tag_list = "";
+            foreach ( $tags as $tag ) {
+                $tag_list .= $tag->name . ', ';
+            }
+            $tag_list = rtrim($tag_list, " ,");
+            return $tag_list;
+        }
+    } else {
+        return "";
     }
 }
 
 
 /**
- * This is a filter for the description metatag text.
+ * Returns a comma-delimited list of all the blog's categories.
+ * The built-in category "Uncategorized" is excluded.
  */
-function amt_clean_desc($desc) {
-    $desc = stripslashes($desc);
-    $desc = strip_tags($desc);
-    // Clean double quotes
-    $desc = str_replace('"', '', $desc);
-    $desc = htmlspecialchars($desc);
-    //$desc = preg_replace('/(\n+)/', ' ', $desc);
-    $desc = preg_replace('/([\n \t\r]+)/', ' ', $desc); 
-    $desc = preg_replace('/( +)/', ' ', $desc);
+function amt_get_all_categories($no_uncategorized = TRUE) {
 
-    // Remove shortcode
-    $pattern = get_shortcode_regex();
-    //var_dump($pattern);
-    $desc = preg_replace('#' . $pattern . '#s', '', $desc);
+    global $wpdb;
 
-    return trim($desc);
+    if ( version_compare( get_bloginfo('version'), '2.3', '>=' ) ) {
+        $cat_field = "name";
+        $sql = "SELECT name FROM $wpdb->terms LEFT OUTER JOIN $wpdb->term_taxonomy ON ($wpdb->terms.term_id = $wpdb->term_taxonomy.term_id) WHERE $wpdb->term_taxonomy.taxonomy = 'category' ORDER BY name ASC";
+    } else {
+        $cat_field = "cat_name";
+        $sql = "SELECT cat_name FROM $wpdb->categories ORDER BY cat_name ASC";
+    }
+    $categories = $wpdb->get_results($sql);
+    if ( empty( $categories ) ) {
+        return "";
+    } else {
+        $all_cats = "";
+        foreach ( $categories as $cat ) {
+            if ($no_uncategorized && $cat->$cat_field != "Uncategorized") {
+                $all_cats .= $cat->$cat_field . ', ';
+            }
+        }
+        $all_cats = rtrim($all_cats, " ,");
+        return $all_cats;
+    }
 }
-
 
 
 /**
@@ -77,6 +337,10 @@ function amt_get_supported_post_types() {
     $supported_builtin_types = array('post', 'page');
     $public_custom_types = get_post_types( array('public'=>true, '_builtin'=>false, 'show_ui'=>true) );
     $supported_types = array_merge($supported_builtin_types, $public_custom_types);
+
+    // Allow filtering of the supported content types.
+    $supported_types = apply_filters( 'amt_supported_post_types', $supported_types );
+
     return $supported_types;
 }
 
@@ -324,44 +588,6 @@ function amt_get_posts_page_id() {
 
 
 /**
- * This is a helper function that returns the current post's ID
- */
-function amt_get_post_id() {
-    if ( amt_is_static_front_page() ) {
-        return amt_get_front_page_id();
-    } elseif ( amt_is_static_home() ) {
-        return amt_get_posts_page_id();
-    } elseif ( is_singular() ) {
-        global $post;
-        return $post->ID;
-        // Alt
-        // global $posts;
-        // return $posts[0]->ID
-    }
-}
-
-
-/**
- * Helper function that returns the current post object
- */
-function amt_get_current_post_object() {
-    // Determine post object.
-    if ( amt_is_static_home() ) {
-        // If a static page is used as the page that displays the latest posts,
-        // the available $post object is NOT the object of the static page,
-        // but the object of the latest retrieved post.
-        // This does not happen with the static page that is used as a front page.
-        $post = get_post( amt_get_posts_page_id() );
-    } else {
-        //global $post;
-        // Get current post.
-        $post = get_post();
-    }
-    return $post;
-}
-
-
-/**
  * Opengraph helper functions
  */
 
@@ -408,5 +634,34 @@ function amt_get_dublin_core_author_notation($post) {
  */
 function amt_iso8601_date( $mysqldate ) {
     return mysql2date('c', $mysqldate);
+}
+
+
+/**
+ * Custom meta tag highlighter.
+ *
+ * Expects string.
+ */
+function amt_metatag_highlighter( $metatags ) {
+
+    preg_match_all('#([^\s]+="[^"]+?)"#i', $metatags, $matches);
+    if ( !$matches ) {
+        return $metatags;
+    }
+
+    //var_dump($matches[0]);
+    foreach ($matches[0] as $match) {
+        $highlighted = preg_replace('#^([^=]+)="(.+)"$#i', '<span style="font-weight:bold;color:black;">$1</span>="<span style="color:blue;">$2</span>"', $match);
+        //var_dump($highlighted);
+        $metatags = str_replace($match, $highlighted, $metatags);
+    }
+
+    // Do some conversions
+    $metatags =  wp_pre_kses_less_than( $metatags );
+    // Done by wp_pre_kses_less_than()
+    //$metatags = str_replace('<meta', '&lt;meta', $metatags);
+    //$metatags = str_replace('/>', '/&gt;', $metatags);
+
+    return $metatags;
 }
 
