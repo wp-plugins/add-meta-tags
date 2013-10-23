@@ -2,508 +2,1284 @@
 /*
 Plugin Name: Add Meta Tags
 Plugin URI: http://www.g-loaded.eu/2006/01/05/add-meta-tags-wordpress-plugin/
-Description: Adds the <em>Description</em> and <em>Keywords</em> XHTML META tags to your blog's <em>front page</em> and to each one of the <em>posts</em>, <em>static pages</em> and <em>category archives</em>. This operation is automatic, but the generated META tags can be fully customized. Also, the inclusion of other META tags, which do not need any computation, is possible. Please read the tips and all other info provided at the <a href="options-general.php?page=add-meta-tags.php">configuration panel</a>.
-Version: 1.7
+Description: Adds the <em>Description</em> and <em>Keywords</em> XHTML META tags to your blog's <em>front page</em>, posts, pages, category-based archives and tag-based archives. Also adds <em>Opengraph</em> and <em>Dublin Core</em> metadata on posts and pages.
+Version: 2.3.4
 Author: George Notaras
 Author URI: http://www.g-loaded.eu/
+License: Apache License v2
 */
 
-/*
-  Copyright 2007 George Notaras <gnot [at] g-loaded.eu>, CodeTRAX.org
-
-  Licensed under the Apache License, Version 2.0 (the "License");
-  you may not use this file except in compliance with the License.
-  You may obtain a copy of the License at
-
-      http://www.apache.org/licenses/LICENSE-2.0
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
+/**
+ *  Copyright 2006-2013 George Notaras <gnot@g-loaded.eu>, CodeTRAX.org
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
 */
 
-/*
 
-INTERNAL Configuration Options
+// Store plugin directory
+define('AMT_DIR', dirname(__FILE__));
 
-1 - Include/Exclude the "keywords" metatag.
+// Import modules
+require_once(AMT_DIR.'/amt-settings.php');
+require_once(AMT_DIR.'/amt-admin-panel.php');
+require_once(AMT_DIR.'/amt-utils.php');
+require_once(AMT_DIR.'/amt-template-tags.php');
 
-    The following option exists ONLY for those who do not want a "keywords"
-    metatag META tag to be generated in "Single-Post-View", but still want the
-    "description" META tag.
+
+/**
+ * Translation Domain
+ *
+ * Translation files are searched in: wp-content/plugins
+ */
+load_plugin_textdomain('add-meta-tags', false, dirname( plugin_basename( __FILE__ ) ) . '/languages/');
+
+
+/**
+ * Settings Link in the ``Installed Plugins`` page
+ */
+function amt_plugin_actions( $links, $file ) {
+    if( $file == plugin_basename(__FILE__) && function_exists( "admin_url" ) ) {
+        $settings_link = '<a href="' . admin_url( 'options-general.php?page=add-meta-tags-options' ) . '">' . __('Settings') . '</a>';
+        // Add the settings link before other links
+        array_unshift( $links, $settings_link );
+    }
+    return $links;
+}
+add_filter( 'plugin_action_links', 'amt_plugin_actions', 10, 2 );
+
+
+
+/**
+ * Generates basic metadata for the head area.
+ *
+ */
+function amt_add_basic_metadata_head( $post ) {
+
+    // Get the options the DB
+    $options = get_option("add_meta_tags_opts");
+    $do_description = (($options["auto_description"] == "1") ? true : false );
+    $do_keywords = (($options["auto_keywords"] == "1") ? true : false );
+    $do_noodp_description = (($options["noodp_description"] == "1") ? true : false );
+
+    // Array to store metadata
+    $metadata_arr = array();
+
+    // Add NOODP on posts and pages
+    if ( $do_noodp_description && (is_front_page() || is_single() || is_page()) ) {
+        $metadata_arr[] = '<meta name="robots" content="NOODP,NOYDIR" />';
+    }
+
+    if ( amt_is_default_front_page() ) {
+        /*
+         * Add META tags to Front Page, only if the 'latest posts' are set to
+         * be displayed on the front page in the 'Reading Settings'.
+         *
+         * Description and Keywords from the Add-Meta-Tags settings override
+         * default behaviour.
+         *
+         * Description and Keywords are always set on the front page regardless
+         * of the auto_description and auto_keywords setings.
+         */
+
+        // Description
+        if ($do_description) {
+            // First use the site description from the Add-Meta-Tags settings
+            $site_description = $options["site_description"];
+            if (empty($site_description)) {
+                // Alternatively, use the blog description
+                // Here we sanitize the provided description for safety
+                $site_description = sanitize_text_field( amt_sanitize_description( get_bloginfo('description') ) );
+            }
+
+            if ( !empty($site_description) ) {
+                // If $site_description is not empty, then use it in the description meta-tag of the front page
+                $metadata_arr[] = '<meta name="description" content="' . esc_attr( amt_process_paged( $site_description ) ) . '" />';
+            }
+        }
+
+        // Keywords
+        if ($do_keywords) {
+            $site_keywords = $options["site_keywords"];
+            if (empty($site_keywords)) {
+                // Alternatively, use the blog categories
+                // Here we sanitize the provided keywords for safety
+                $site_keywords = sanitize_text_field( amt_sanitize_keywords( amt_get_all_categories() ) );
+            }
+
+            if ( !empty($site_keywords) ) {
+                // If $site_keywords is not empty, then use it in the keywords meta-tag of the front page
+                $metadata_arr[] = '<meta name="keywords" content="' . esc_attr( $site_keywords ) . '" />';
+            }
+        }
+
+    } elseif ( is_singular() || amt_is_static_front_page() || amt_is_static_home() ) {
+
+        // Description
+        if ($do_description) {
+            $description = amt_get_content_description($post, $auto=$do_description);
+            if (!empty($description)) {
+                $metadata_arr[] = '<meta name="description" content="' . esc_attr( amt_process_paged( $description ) ) . '" />';
+            }
+        }
+
+        // Keywords
+        if ($do_keywords) {
+            $keywords = amt_get_content_keywords($post, $auto=$do_keywords);
+            if (!empty($keywords)) {
+                $metadata_arr[] = '<meta name="keywords" content="' . esc_attr( $keywords ) . '" />';
+            }
+        }
+
+        // 'news_keywords'
+        $newskeywords = amt_get_post_meta_newskeywords( $post->ID );
+        if (!empty($newskeywords)) {
+            $metadata_arr[] = '<meta name="news_keywords" content="' . esc_attr( $newskeywords ) . '" />';
+        }
+
+        // per post full meta tags
+        $full_metatags_for_content = amt_get_post_meta_full_metatags( $post->ID );
+        if (!empty($full_metatags_for_content)) {
+            $metadata_arr[] = html_entity_decode( stripslashes( $full_metatags_for_content ) );
+        }
+
+
+    } elseif ( is_category() ) {
+        /*
+         * Write a description META tag only if a description for the current category has been set.
+         */
+        if ($do_description) {
+            // Here we sanitize the provided description for safety
+            $description_content = sanitize_text_field( amt_sanitize_description( category_description() ) );
+            if (!empty($description_content)) {
+                $metadata_arr[] = '<meta name="description" content="' . esc_attr( amt_process_paged( $description_content ) ) . '" />';
+            }
+        }
+        
+        /*
+         * Write a keyword metatag if there is a category name (always)
+         */
+        if ($do_keywords) {
+            // Here we sanitize the provided keywords for safety
+            $cur_cat_name = sanitize_text_field( amt_sanitize_keywords( single_cat_title($prefix = '', $display = false ) ) );
+            if ( !empty($cur_cat_name) ) {
+                $metadata_arr[] = '<meta name="keywords" content="' . esc_attr( $cur_cat_name ) . '" />';
+            }
+        }
+
+    } elseif ( is_tag() ) {
+        /*
+         * Writes a description META tag only if a description for the current tag has been set.
+         */
+        if ($do_description) {
+            // Here we sanitize the provided description for safety
+            $description_content = sanitize_text_field( amt_sanitize_description( tag_description() ) );
+            if (!empty($description_content)) {
+                $metadata_arr[] = '<meta name="description" content="' . esc_attr( amt_process_paged( $description_content ) ) . '" />';
+            }
+        }
+        
+        /*
+         * Write a keyword metatag if there is a tag name (always)
+         */
+        if ($do_keywords) {
+            // Here we sanitize the provided keywords for safety
+            $cur_tag_name = sanitize_text_field( amt_sanitize_keywords( single_tag_title($prefix = '', $display = false ) ) );
+            if ( !empty($cur_tag_name) ) {
+                $metadata_arr[] = '<meta name="keywords" content="' . esc_attr( $cur_tag_name ) . '" />';
+            }
+        }
+
+    } elseif ( is_author() ) {
+
+        // Author object
+        // NOTE: Inside the author archives `$post->post_author` does not contain the author object.
+        // In this case the $post (get_queried_object()) contains the author object itself.
+        // We also can get the author object with the following code. Slug is what WP uses to construct urls.
+        // $author = get_user_by( 'slug', get_query_var( 'author_name' ) );
+        // Also, ``get_the_author_meta('....', $author)`` returns nothing under author archives.
+        // Access user meta with:  $author->description, $author->user_email, etc
+        $author = get_queried_object();
+
+        // Write a description META tag only if a bio has been set in the user profile.
+        if ($do_description) {
+            // Here we sanitize the provided description for safety
+            $author_description = sanitize_text_field( amt_sanitize_description( $author->description ) );
+            if ( !empty($author_description) ) {
+                $metadata_arr[] = '<meta name="description" content="' . esc_attr( $author_description ) . '" />';
+            }
+        }
+        
+        // no keywords meta tag for author archive
+        // TODO: add the categories of the posts the author has written.
+        
+    }
+
+    // Add site wide meta tags
+    if (!empty($options["site_wide_meta"])) {
+        $metadata_arr[] = html_entity_decode( stripslashes( $options["site_wide_meta"] ) );
+    }
+
+    // On every page print the copyright head link
+    if (!empty($options["copyright_url"])) {
+        $metadata_arr[] = '<link rel="copyright" type="text/html" title="' . esc_attr( get_bloginfo('name') ) . ' Copyright Information" href="' . esc_url_raw( $options["copyright_url"] ) . '" />';
+    }
+
+    // Filtering of the generated basic metadata
+    $metadata_arr = apply_filters( 'amt_basic_metadata_head', $metadata_arr );
+
+    return $metadata_arr;
+}
+
+
+/**
+ * Twitter Cards
+ * Twitter Cards specification: https://dev.twitter.com/docs/cards
+ */
+
+/**
+ * Add contact method for Twitter username of author and publisher.
+ */
+function amt_add_twitter_contactmethod( $contactmethods ) {
+    // Add Twitter author username
+    if ( !isset( $contactmethods['amt_twitter_author_username'] ) ) {
+        $contactmethods['amt_twitter_author_username'] = __('Twitter author username', 'add-meta-tags');
+    }
+    // Add Twitter publisher username
+    if ( !isset( $contactmethods['amt_twitter_publisher_username'] ) ) {
+        $contactmethods['amt_twitter_publisher_username'] = __('Twitter publisher username', 'add-meta-tags');
+    }
+    return $contactmethods;
+}
+add_filter( 'user_contactmethods', 'amt_add_twitter_contactmethod', 10, 1 );
+
+
+/**
+ * Generate Twitter Cards metadata for the content pages.
+ */
+function amt_add_twitter_cards_metadata_head( $post ) {
+
+    // Get the options the DB
+    $options = get_option("add_meta_tags_opts");
+    $do_auto_twitter = (($options["auto_twitter"] == "1") ? true : false );
+    if (!$do_auto_twitter) {
+        return array();
+    }
+
+    $metadata_arr = array();
+
+    // Twitter cards are only added to content
+    if ( is_singular() && ! is_front_page() ) {     // is_front_page() is used for the case in which a static page is used as the front page.
+
+        // Type
+        $metadata_arr[] = '<meta name="twitter:card" content="summary" />';
+
+        // Author and Publisher
+        $twitter_author_username = get_the_author_meta('amt_twitter_author_username', $post->post_author);
+        if ( !empty($twitter_author_username) ) {
+            $metadata_arr[] = '<meta name="twitter:creator" content="@' . esc_attr( $twitter_author_username ) . '" />';
+        }
+        $twitter_publisher_username = get_the_author_meta('amt_twitter_publisher_username', $post->post_author);
+        if ( !empty($twitter_publisher_username) ) {
+            $metadata_arr[] = '<meta name="twitter:site" content="@' . esc_attr( $twitter_publisher_username ) . '" />';
+        }
+
+        // Title
+        // Note: Contains multipage information through amt_process_paged()
+        $metadata_arr[] = '<meta name="twitter:title" content="' . esc_attr( amt_process_paged( get_the_title($post->ID) ) ) . '" />';
+
+        // Description - We use the description defined by Add-Meta-Tags
+        // Note: Contains multipage information through amt_process_paged()
+        $content_desc = amt_get_content_description($post);
+        if ( !empty($content_desc) ) {
+            $metadata_arr[] = '<meta name="twitter:description" content="' . esc_attr( amt_process_paged( $content_desc ) ) . '" />';
+        }
+
+        // Image
+        if ( function_exists('has_post_thumbnail') && has_post_thumbnail($post->ID) ) {
+            $thumbnail_info = wp_get_attachment_image_src( get_post_thumbnail_id($post->ID), 'medium' );
+            $metadata_arr[] = '<meta name="twitter:image:src" content="' . esc_url_raw( $thumbnail_info[0] ) . '" />';
+            $metadata_arr[] = '<meta name="twitter:image:width" content="' . esc_attr( $thumbnail_info[1] ) . '" />';
+            $metadata_arr[] = '<meta name="twitter:image:height" content="' . esc_attr( $thumbnail_info[2] ) . '" />';
+        } elseif ( is_attachment() && wp_attachment_is_image($post->ID) ) { // is attachment page and contains an image.
+            $attachment_image_info = wp_get_attachment_image_src( get_post_thumbnail_id($post->ID), 'large' );
+            $metadata_arr[] = '<meta name="twitter:image:src" content="' . esc_url_raw( $attachment_image_info[0] ) . '" />';
+            $metadata_arr[] = '<meta name="twitter:image:width" content="' . esc_attr( $attachment_image_info[1] ) . '" />';
+            $metadata_arr[] = '<meta name="twitter:image:height" content="' . esc_attr( $attachment_image_info[2] ) . '" />';
+        } elseif (!empty($options["default_image_url"])) {
+            // Alternatively, use default image
+            $metadata_arr[] = '<meta name="twitter:image" content="' . esc_url_raw( $options["default_image_url"] ) . '" />';
+        }
+
+    }
+
+    // Filtering of the generated Opengraph metadata
+    $metadata_arr = apply_filters( 'amt_twitter_cards_metadata_head', $metadata_arr );
+
+    return $metadata_arr;
+}
+
+
+/**
+ * Opengraph metadata
+ * Opengraph Specification: http://ogp.me
+ */
+
+/**
+ * Add contact method for Facebook author and publisher.
+ */
+function amt_add_facebook_contactmethod( $contactmethods ) {
+    // Add Facebook Author Profile URL
+    if ( !isset( $contactmethods['amt_facebook_author_profile_url'] ) ) {
+        $contactmethods['amt_facebook_author_profile_url'] = __('Facebook Author Profile URL', 'add-meta-tags');
+    }
+    // Add Facebook Publisher Profile URL
+    if ( !isset( $contactmethods['amt_facebook_publisher_profile_url'] ) ) {
+        $contactmethods['amt_facebook_publisher_profile_url'] = __('Facebook Publisher Profile URL', 'add-meta-tags');
+    }
+
+    // Remove test
+    // if ( isset( $contactmethods['test'] ) {
+    //     unset( $contactmethods['test'] );
+    // }
+
+    return $contactmethods;
+}
+add_filter( 'user_contactmethods', 'amt_add_facebook_contactmethod', 10, 1 );
+
+
+/**
+ * Generates Opengraph metadata.
+ *
+ * Currently for:
+ * - home page
+ * - author archive
+ * - content
+ */
+function amt_add_opengraph_metadata_head( $post ) {
+
+    // Get the options the DB
+    $options = get_option("add_meta_tags_opts");
+    $do_auto_opengraph = (($options["auto_opengraph"] == "1") ? true : false );
+    if (!$do_auto_opengraph) {
+        return array();
+    }
+
+    $metadata_arr = array();
+
+    if ( is_paged() ) {
+        //
+        // Currently we do not support adding Opengraph metadata on
+        // paged archives, if page number is >=2
+        //
+        // NOTE: This refers to an archive or the main page being split up over
+        // several pages, this does not refer to a Post or Page whose content
+        // has been divided into pages using the <!--nextpage--> QuickTag.
+        //
+        // Multipage content IS processed below.
+        //
+
+    } elseif ( amt_is_default_front_page() ) {
+
+        $metadata_arr[] = '<meta property="og:title" content="' . esc_attr( get_bloginfo('name') ) . '" />';
+        $metadata_arr[] = '<meta property="og:type" content="website" />';
+        // Site Image
+        // Use the default image, if one has been set.
+        if (!empty($options["default_image_url"])) {
+            $metadata_arr[] = '<meta property="og:image" content="' . esc_url_raw( $options["default_image_url"] ) . '" />';
+        }
+        $metadata_arr[] = '<meta property="og:url" content="' . esc_url_raw( get_bloginfo('url') ) . '" />';
+        // Site description
+        if (!empty($options["site_description"])) {
+            $metadata_arr[] = '<meta property="og:description" content="' . esc_attr( $options["site_description"] ) . '" />';
+        } elseif (get_bloginfo('description')) {
+            $metadata_arr[] = '<meta property="og:description" content="' . esc_attr( get_bloginfo('description') ) . '" />';
+        }
+        $metadata_arr[] = '<meta property="og:locale" content="' . esc_attr( str_replace('-', '_', get_bloginfo('language')) ) . '" />';
+        $metadata_arr[] = '<meta property="og:site_name" content="' . esc_attr( get_bloginfo('name') ) . '" />';
+
+
+    } elseif ( is_author() ) {
+
+        // Author object
+        // NOTE: Inside the author archives `$post->post_author` does not contain the author object.
+        // In this case the $post (get_queried_object()) contains the author object itself.
+        // We also can get the author object with the following code. Slug is what WP uses to construct urls.
+        // $author = get_user_by( 'slug', get_query_var( 'author_name' ) );
+        // Also, ``get_the_author_meta('....', $author)`` returns nothing under author archives.
+        // Access user meta with:  $author->description, $author->user_email, etc
+        $author = get_queried_object();
+
+        $metadata_arr[] = '<meta property="og:site_name" content="' . esc_attr( get_bloginfo('name') ) . '" />';
+        $metadata_arr[] = '<meta property="og:locale" content="' . esc_attr( str_replace('-', '_', get_bloginfo('language')) ) . '" />';
+        $metadata_arr[] = '<meta property="og:title" content="' . esc_attr( $author->display_name ) . ' profile page" />';
+        $metadata_arr[] = '<meta property="og:type" content="profile" />';
+
+        // Profile Image
+        // Try to get the gravatar
+        // Note: We do not use the get_avatar() function since it returns an img element.
+        // Here we do not check if "Show Avatars" is unchecked in Settings > Discussion
+        $author_email = sanitize_email( $author->user_email );
+        if ( !empty( $author_email ) ) {
+            // Contruct gravatar link
+            $gravatar_size = 128;
+            $gravatar_url = "http://www.gravatar.com/avatar/" . md5( $author_email ) . "?s=" . $gravatar_size;
+            $metadata_arr[] = '<meta property="og:image" content="' . esc_url_raw( $gravatar_url ) . '" />';
+            $metadata_arr[] = '<meta property="og:imagesecure_url" content="' . esc_url_raw( str_replace('http:', 'https:', $gravatar_url ) ) . '" />';
+            $metadata_arr[] = '<meta property="og:image:width" content="' . esc_attr( $gravatar_size ) . '" />';
+            $metadata_arr[] = '<meta property="og:image:height" content="' . esc_attr( $gravatar_size ) . '" />';
+            $metadata_arr[] = '<meta property="og:image:type" content="image/jpeg" />';
+        }
+
+        // url
+        // If a Facebook author profile URL has been provided, it has priority,
+        // Otherwise fall back to the WordPress author archive.
+        $fb_author_url = $author->amt_facebook_author_profile_url;
+        if ( !empty($fb_author_url) ) {
+            $metadata_arr[] = '<meta property="og:url" content="' . esc_url_raw( $fb_author_url, array('http', 'https') ) . '" />';
+        } else {
+            $metadata_arr[] = '<meta property="og:url" content="' . esc_url_raw( get_author_posts_url( $author->ID ) ) . '" />';
+        }
+
+        // description
+        // Here we sanitize the provided description for safety
+        $author_description = sanitize_text_field( amt_sanitize_description( $author->description ) );
+        if ( !empty($author_description) ) {
+            $metadata_arr[] = '<meta property="og:description" content="' . esc_attr( $author_description ) . '" />';
+        }
+
+        // Profile first and last name
+        $last_name = $author->last_name;
+        if ( !empty($last_name) ) {
+            $metadata_arr[] = '<meta property="profile:last_name" content="' . esc_attr( $last_name ) . '" />';
+        }
+        $first_name = $author->first_name;
+        if ( !empty($first_name) ) {
+            $metadata_arr[] = '<meta property="profile:first_name" content="' . esc_attr( $first_name ) . '" />';
+        }
+
+    } elseif ( is_singular() || amt_is_static_front_page() || amt_is_static_home() ) {
+
+        // Title
+        // Note: Contains multipage information through amt_process_paged()
+        $metadata_arr[] = '<meta property="og:title" content="' . esc_attr( amt_process_paged( get_the_title($post->ID) ) ) . '" />';
+
+        // URL
+        // TODO: In case of paginated content, get_permalink() still returns the link to the main mage. FIX (#1025)
+        $metadata_arr[] = '<meta property="og:url" content="' . esc_url_raw( get_permalink($post->ID) ) . '" />';
+
+        // Image
+        if ( function_exists('has_post_thumbnail') && has_post_thumbnail($post->ID) ) {
+            $thumbnail_info = wp_get_attachment_image_src( get_post_thumbnail_id($post->ID), 'medium' );
+            $metadata_arr[] = '<meta property="og:image" content="' . esc_url_raw( $thumbnail_info[0] ) . '" />';
+            //$metadata_arr[] = '<meta property="og:image:secure_url" content="' . esc_url_raw( str_replace('http:', 'https:', $thumbnail_info[0]) ) . '" />';
+            $metadata_arr[] = '<meta property="og:image:width" content="' . esc_attr( $thumbnail_info[1] ) . '" />';
+            $metadata_arr[] = '<meta property="og:image:height" content="' . esc_attr( $thumbnail_info[2] ) . '" />';
+        } elseif ( is_attachment() && wp_attachment_is_image($post->ID) ) { // is attachment page and contains an image.
+            $attachment_image_info = wp_get_attachment_image_src( get_post_thumbnail_id($post->ID), 'large' );
+            $metadata_arr[] = '<meta property="og:image" content="' . esc_url_raw( $attachment_image_info[0] ) . '" />';
+            //$metadata_arr[] = '<meta property="og:image:secure_url" content="' . esc_url_raw( str_replace('http:', 'https:', $attachment_image_info[0]) ) . '" />';
+            $metadata_arr[] = '<meta property="og:image:type" content="' . esc_attr( get_post_mime_type($post->ID) ) . '" />';
+            $metadata_arr[] = '<meta property="og:image:width" content="' . esc_attr( $attachment_image_info[1] ) . '" />';
+            $metadata_arr[] = '<meta property="og:image:height" content="' . esc_attr( $attachment_image_info[2] ) . '" />';
+        } elseif (!empty($options["default_image_url"])) {
+            // Alternatively, use default image
+            $metadata_arr[] = '<meta property="og:image" content="' . esc_url_raw( $options["default_image_url"] ) . '" />';
+        }
+
+        // Description - We use the description defined by Add-Meta-Tags
+        // Note: Contains multipage information through amt_process_paged()
+        $content_desc = amt_get_content_description($post);
+        if ( !empty($content_desc) ) {
+            $metadata_arr[] = '<meta property="og:description" content="' . esc_attr( amt_process_paged( $content_desc ) ) . '" />';
+        }
+
+        $metadata_arr[] = '<meta property="og:locale" content="' . esc_attr( str_replace('-', '_', get_bloginfo('language')) ) . '" />';
+        $metadata_arr[] = '<meta property="og:site_name" content="' . esc_attr( get_bloginfo('name') ) . '" />';
+
+        // Video
+        $video_url = amt_get_video_url();
+        if (!empty($video_url)) {
+            $metadata_arr[] = '<meta property="og:video" content="' . esc_url_raw( $video_url ) . '" />';
+        }
+
+        // Type
+        if ( amt_is_static_front_page() ) {
+            // If it is the front page (could only be a static page here) set type to 'website'
+            $metadata_arr[] = '<meta property="og:type" content="website" />';
+        } elseif ( amt_is_static_home() ) {
+            // If it is the static page containing the latest posts
+            $metadata_arr[] = '<meta property="og:type" content="article" />';
+        } else {
+            // We treat all other resources as articles for now
+            // TODO: Check whether we could use anopther type for image-attachment pages.
+            $metadata_arr[] = '<meta property="og:type" content="article" />';
+            $metadata_arr[] = '<meta property="article:published_time" content="' . esc_attr( amt_iso8601_date($post->post_date) ) . '" />';
+            $metadata_arr[] = '<meta property="article:modified_time" content="' . esc_attr( amt_iso8601_date($post->post_modified) ) . '" />';
+
+            // Author
+            // If a Facebook author profile URL has been provided, it has priority,
+            // Otherwise fall back to the WordPress author archive.
+            $fb_author_url = get_the_author_meta('amt_facebook_author_profile_url', $post->post_author);
+            if ( !empty($fb_author_url) ) {
+                $metadata_arr[] = '<meta property="article:author" content="' . esc_url_raw( $fb_author_url, array('http', 'https', 'mailto') ) . '" />';
+            } else {
+                $metadata_arr[] = '<meta property="article:author" content="' . esc_url_raw( get_author_posts_url( get_the_author_meta( 'ID', $post->post_author ) ) ) . '" />';
+            }
+
+            // Publisher
+            // If a Facebook publisher profile URL has been provided, it has priority,
+            // Otherwise fall back to the WordPress blog home url.
+            $fb_publisher_url = get_the_author_meta('amt_facebook_publisher_profile_url', $post->post_author);
+            if ( !empty($fb_publisher_url) ) {
+                $metadata_arr[] = '<meta property="article:publisher" content="' . esc_url_raw( $fb_publisher_url, array('http', 'https', 'mailto') ) . '" />';
+            } else {
+                $metadata_arr[] = '<meta property="article:publisher" content="' . esc_url_raw( get_bloginfo('url') ) . '" />';
+            }
+
+
+            // article:section: We use the first category as the section
+            $first_cat = amt_get_first_category($post);
+            if (!empty($first_cat)) {
+                $metadata_arr[] = '<meta property="article:section" content="' . esc_attr( $first_cat ) . '" />';
+            }
+            
+            // article:tag: Keywords are listed as post tags
+            $keywords = explode(', ', amt_get_content_keywords($post));
+            foreach ($keywords as $tag) {
+                if (!empty($tag)) {
+                    $metadata_arr[] = '<meta property="article:tag" content="' . esc_attr( $tag ) . '" />';
+                }
+            }
+        }
+    }
+
+    // Filtering of the generated Opengraph metadata
+    $metadata_arr = apply_filters( 'amt_opengraph_metadata_head', $metadata_arr );
+
+    return $metadata_arr;
+}
+
+
+/**
+ * Dublin Core metadata on posts and pages
+ * http://dublincore.org/documents/dcmi-terms/
+ * 
+ */
+
+function amt_add_dublin_core_metadata_head( $post ) {
+
+    if ( !is_singular() || is_front_page() ) {  // is_front_page() is used for the case in which a static page is used as the front page.
+        // Dublin Core metadata has a meaning for content only.
+        return array();
+    }
+
+    // Get the options the DB
+    $options = get_option("add_meta_tags_opts");
+    $do_auto_dublincore = (($options["auto_dublincore"] == "1") ? true : false );
+    if (!$do_auto_dublincore) {
+        return array();
+    }
+
+    $metadata_arr = array();
+
+    // Title
+    // Note: Contains multipage information through amt_process_paged()
+    $metadata_arr[] = '<meta name="dc.title" content="' . esc_attr( amt_process_paged( get_the_title($post->ID) ) ) . '" />';
+
+    // Resource identifier
+    // TODO: In case of paginated content, get_permalink() still returns the link to the main mage. FIX (#1025)
+    $metadata_arr[] = '<meta name="dcterms.identifier" scheme="dcterms.uri" content="' . esc_url_raw( get_permalink($post->ID) ) . '" />';
+
+    $metadata_arr[] = '<meta name="dc.creator" content="' . esc_attr( amt_get_dublin_core_author_notation($post) ) . '" />';
+    $metadata_arr[] = '<meta name="dc.date" scheme="dc.w3cdtf" content="' . esc_attr( amt_iso8601_date($post->post_date) ) . '" />';
+
+    // Description
+    // We use the same description as the ``description`` meta tag.
+    // Note: Contains multipage information through amt_process_paged()
+    $content_desc = amt_get_content_description($post);
+    if ( !empty($content_desc) ) {
+        $metadata_arr[] = '<meta name="dc.description" content="' . esc_attr( amt_process_paged( $content_desc ) ) . '" />';
+    }
+
+    // Keywords are in the form: keyword1;keyword2;keyword3
+    $metadata_arr[] = '<meta name="dc.subject" content="' . esc_attr( amt_get_content_keywords_mesh($post) ) . '" />';
+
+    $metadata_arr[] = '<meta name="dc.language" scheme="dcterms.rfc4646" content="' . esc_attr( get_bloginfo('language') ) . '" />';
+    $metadata_arr[] = '<meta name="dc.publisher" scheme="dcterms.uri" content="' . esc_url_raw( get_bloginfo('url') ) . '" />';
+
+    // Copyright page
+    if (!empty($options["copyright_url"])) {
+        $metadata_arr[] = '<meta name="dcterms.rights" scheme="dcterms.uri" content="' . esc_url_raw( get_bloginfo('url') ) . '" />';
+    }
+    // The following requires creative commons configurator
+    if (function_exists('bccl_get_license_url')) {
+        $metadata_arr[] = '<meta name="dcterms.license" scheme="dcterms.uri" content="' . esc_url_raw( bccl_get_license_url() ) . '" />';
+    }
+
+    $metadata_arr[] = '<meta name="dc.coverage" content="World" />';
+
+    /**
+     * WordPress Post Formats: http://codex.wordpress.org/Post_Formats
+     * Dublin Core Format: http://dublincore.org/documents/dcmi-terms/#terms-format
+     * Dublin Core DCMIType: http://dublincore.org/documents/dcmi-type-vocabulary/
+     */
+
+    /**
+     * TREAT ALL POST FORMATS AS TEXT (for now)
+     */
+    $metadata_arr[] = '<meta name="dc.type" scheme="DCMIType" content="Text" />';
+    $metadata_arr[] = '<meta name="dc.format" scheme="dcterms.imt" content="text/html" />';
+
+    /**
+    $format = get_post_format( $post->id );
+    if ( empty($format) || $format=="aside" || $format=="link" || $format=="quote" || $format=="status" || $format=="chat") {
+        // Default format
+        $metadata_arr[] = '<meta name="dc.type" scheme="DCMIType" content="Text" />';
+        $metadata_arr[] = '<meta name="dc.format" scheme="dcterms.imt" content="text/html" />';
+    } elseif ($format=="gallery") {
+        $metadata_arr[] = '<meta name="dc.type" scheme="DCMIType" content="Collection" />';
+        // $metadata_arr[] = '<meta name="dc.format" scheme="dcterms.imt" content="image" />';
+    } elseif ($format=="image") {
+        $metadata_arr[] = '<meta name="dc.type" scheme="DCMIType" content="Image" />';
+        // $metadata_arr[] = '<meta name="dc.format" scheme="dcterms.imt" content="image/png" />';
+    } elseif ($format=="video") {
+        $metadata_arr[] = '<meta name="dc.type" scheme="DCMIType" content="Moving Image" />';
+        $metadata_arr[] = '<meta name="dc.format" scheme="dcterms.imt" content="application/x-shockwave-flash" />';
+    } elseif ($format=="audio") {
+        $metadata_arr[] = '<meta name="dc.type" scheme="DCMIType" content="Sound" />';
+        $metadata_arr[] = '<meta name="dc.format" scheme="dcterms.imt" content="audio/mpeg" />';
+    }
+    */
+
+    // Filtering of the generated Dublin Core metadata
+    $metadata_arr = apply_filters( 'amt_dublin_core_metadata_head', $metadata_arr );
+
+    return $metadata_arr;
+}
+
+
+/**
+ * Schema.org Metadata
+ * http://schema.org
+ *
+ * Also Google+ author and publisher links in HEAD.
+ */
+
+/**
+ * Add contact method for Google+ for author and publisher.
+ */
+function amt_add_googleplus_contactmethod( $contactmethods ) {
+    // Add Google+ author profile URL
+    if ( !isset( $contactmethods['amt_googleplus_author_profile_url'] ) ) {
+        $contactmethods['amt_googleplus_author_profile_url'] = __('Google+ author profile URL', 'add-meta-tags');
+    }
+    // Add Google+ publisher profile URL
+    if ( !isset( $contactmethods['amt_googleplus_publisher_profile_url'] ) ) {
+        $contactmethods['amt_googleplus_publisher_profile_url'] = __('Google+ publisher page URL', 'add-meta-tags');
+    }
+    return $contactmethods;
+}
+add_filter( 'user_contactmethods', 'amt_add_googleplus_contactmethod', 10, 1 );
+
+
+/**
+ * Adds links with the rel 'author' and 'publisher' to the HEAD of the page for Google+.
+ */
+function amt_add_schemaorg_metadata_head( $post ) {
+
+    if ( !is_singular() || is_front_page() ) {  // is_front_page() is used for the case in which a static page is used as the front page.
+        // Add these metatags on content pages only.
+        return array();
+    }
+
+    // Get the options the DB
+    $options = get_option("add_meta_tags_opts");
+    $do_auto_schemaorg = (($options["auto_schemaorg"] == "1") ? true : false );
+    if (!$do_auto_schemaorg) {
+        return array();
+    }
+
+    $metadata_arr = array();
+
+    // Publisher
+    $googleplus_publisher_url = get_the_author_meta('amt_googleplus_publisher_profile_url', $post->post_author);
+    if ( !empty($googleplus_publisher_url) ) {
+        $metadata_arr[] = '<link rel="publisher" type="text/html" title="' . esc_attr( get_bloginfo('name') ) . '" href="' . esc_url_raw( $googleplus_publisher_url, array('http', 'https') ) . '" />';
+    }
+
+    // Author
+    $googleplus_author_url = get_the_author_meta('amt_googleplus_author_profile_url', $post->post_author);
+    if ( !empty($googleplus_author_url) ) {
+        $metadata_arr[] = '<link rel="author" type="text/html" title="' . esc_attr( get_the_author_meta('display_name', $post->post_author) ) . '" href="' . esc_url_raw( $googleplus_author_url, array('http', 'https') ) . '" />';
+    }
+
+    // Filtering of the generated Google+ metadata
+    $metadata_arr = apply_filters( 'amt_schemaorg_metadata_head', $metadata_arr );
+
+    return $metadata_arr;
+}
+
+
+/**
+ * Add Schema.org Microdata in the footer
+ *
+ * Mainly used to embed microdata to archives.
+ */
+function amt_add_schemaorg_metadata_footer( $post ) {
+
+    // Get the options the DB
+    $options = get_option("add_meta_tags_opts");
+    $do_auto_schemaorg = (($options["auto_schemaorg"] == "1") ? true : false );
+    if (!$do_auto_schemaorg) {
+        return array();
+    }
+
+    // Get current post object
+    $post = get_queried_object();
+
+    $metadata_arr = array();
+
+    if ( is_paged() ) {
+        //
+        // Currently we do not support adding Opengraph metadata on
+        // paged archives, if page number is >=2
+        //
+        // NOTE: This refers to an archive or the main page being split up over
+        // several pages, this does not refer to a Post or Page whose content
+        // has been divided into pages using the <!--nextpage--> QuickTag.
+        //
+        // Multipage content IS processed below.
+        //
+
+    }
+
+    elseif ( is_front_page() ) {
+
+        // Organization
+        // Scope BEGIN: Organization: http://schema.org/Organization
+        $metadata_arr[] = '<span itemscope itemtype="http://schema.org/Organization">';
+        // name
+        $metadata_arr[] = '<meta itemprop="name" content="' . esc_attr( get_bloginfo('name') ) . '" />';
+        // description
+        // First use the site description from the Add-Meta-Tags settings
+        $site_description = $options["site_description"];
+        if ( empty($site_description) ) {
+            // Alternatively, use the blog description
+            // Here we sanitize the provided description for safety
+            $site_description = sanitize_text_field( amt_sanitize_description( get_bloginfo('description') ) );
+        }
+        $metadata_arr[] = '<meta itemprop="description" content="' . esc_attr( $site_description ) . '" />';
+        // logo
+        if ( !empty($options["default_image_url"]) ) {
+            $metadata_arr[] = '<meta itemprop="logo" content="' . esc_url_raw( $options["default_image_url"] ) . '" />';
+        }
+        // url
+        // NOTE: if this is the standard latest posts front page, then directly use the web site url. No author.
+        if ( amt_is_default_front_page() ) {
+            $metadata_arr[] = '<meta itemprop="url" content="' . esc_url_raw( get_bloginfo('url') ) . '" />';
+        } else {
+            // If a Google+ publisher profile URL has been provided, it has priority,
+            // Otherwise fall back to the WordPress blog home url.
+            $googleplus_publisher_url = get_the_author_meta('amt_googleplus_publisher_profile_url', $post->post_author);
+            if ( !empty($googleplus_publisher_url) ) {
+                $metadata_arr[] = '<meta itemprop="url" content="' . esc_url_raw( $googleplus_publisher_url, array('http', 'https') ) . '" />';
+            } else {
+                $metadata_arr[] = '<meta itemprop="url" content="' . esc_url_raw( get_bloginfo('url') ) . '" />';
+            }
+        }
+        // Scope END: Organization
+        $metadata_arr[] = '</span> <!-- Scope END: Organization -->';
+
+    }
+
+    elseif ( is_author() ) {
+
+        // Author object
+        // NOTE: Inside the author archives `$post->post_author` does not contain the author object.
+        // In this case the $post (get_queried_object()) contains the author object itself.
+        // We also can get the author object with the following code. Slug is what WP uses to construct urls.
+        // $author = get_user_by( 'slug', get_query_var( 'author_name' ) );
+        // Also, ``get_the_author_meta('....', $author)`` returns nothing under author archives.
+        // Access user meta with:  $author->description, $author->user_email, etc
+        $author = get_queried_object();
+
+        // Person
+        // Scope BEGIN: Person: http://schema.org/Person
+        $metadata_arr[] = '<span itemscope itemtype="http://schema.org/Person">';
+        // name
+        $display_name = $author->display_name;
+        $metadata_arr[] = '<meta itemprop="name" content="' . esc_attr( $display_name ) . '" />';
+        // description
+        // Here we sanitize the provided description for safety
+        $author_description = sanitize_text_field( amt_sanitize_description( $author->description ) );
+        if ( !empty($author_description) ) {
+            $metadata_arr[] = '<meta itemprop="description" content="' . esc_attr( $author_description ) . '" />';
+        }
+        // image
+        // Try to get the gravatar
+        // Note: We do not use the get_avatar() function since it returns an img element.
+        // Here wqe do not check if "Show Avatars" is unchecked in Settings > Discussion
+        $author_email = sanitize_email( $author->user_email );
+        if ( !empty( $author_email ) ) {
+            // Contruct gravatar link
+            $gravatar_url = "http://www.gravatar.com/avatar/" . md5( $author_email ) . "?s=" . 128;
+            $metadata_arr[] = '<meta itemprop="image" content="' . esc_url_raw( $gravatar_url ) . '" />';
+        }
+        // url
+        // If a Google+ author profile URL has been provided, it has priority,
+        // Otherwise fall back to the WordPress author archive.
+        $googleplus_author_url = $author->amt_googleplus_author_profile_url;
+        if ( !empty($googleplus_author_url) ) {
+            $metadata_arr[] = '<meta itemprop="url" content="' . esc_url_raw( $googleplus_author_url, array('http', 'https') ) . '" />';
+        } else {
+            $metadata_arr[] = '<meta itemprop="url" content="' . esc_url_raw( get_author_posts_url( $author->ID ) ) . '" />';
+        }
+        // second url as sameAs
+        $user_url = $author->user_url;
+        if ( !empty($user_url) ) {
+            $metadata_arr[] = '<meta itemprop="sameAs" content="' . esc_url_raw( $user_url, array('http', 'https') ) . '" />';
+        }
+        // Scope END: Person
+        $metadata_arr[] = '</span> <!-- Scope END: Person -->';
+
+    }
+
+    // Filtering of the generated microdata for footer
+    $metadata_arr = apply_filters( 'amt_schemaorg_metadata_footer', $metadata_arr );
+
+    return $metadata_arr;
+}
+
+
+/**
+ * Filter function that generates and embeds Schema.org metadata in the content.
+ */
+function amt_add_schemaorg_metadata_content_filter( $post_body ) {
+
+    // Post type check takes place here
+    if ( ! is_singular() || is_front_page() ) { // is_front_page() is used for the case in which a static page is used as the front page.
+        return $post_body;
+    }
+
+    // Get the options the DB
+    $options = get_option("add_meta_tags_opts");
+    $do_auto_schemaorg = (($options["auto_schemaorg"] == "1") ? true : false );
+    if (!$do_auto_schemaorg) {
+        return $post_body;
+    }
+
+    // Get current post object
+    $post = get_queried_object();
+
+    $metadata_arr = array();
+
+    // Post type check has not run, so do it here.
+    // Check if metadata is supported on this content type.
+    $post_type = get_post_type( $post );
+    if ( ! in_array( $post_type, amt_get_supported_post_types() ) ) {
+        return $post_body;
+    }
+
+    // Scope BEGIN: Article: http://schema.org/Article
+    $metadata_arr[] = '<span itemscope itemtype="http://schema.org/Article">';
+
+    // name
+    // Note: Contains multipage information through amt_process_paged()
+    $metadata_arr[] = '<meta itemprop="name" content="' . esc_attr( amt_process_paged( get_the_title($post->ID) ) ) . '" />';
+
+    // headline
+    $metadata_arr[] = '<meta itemprop="headline" content="' . esc_attr( get_the_title($post->ID) ) . '" />';
+
+    // URL
+    $metadata_arr[] = '<meta itemprop="url" content="' . esc_url_raw( get_permalink($post->ID) ) . '" />';
+
+    // Description - We use the description defined by Add-Meta-Tags
+    // Note: Contains multipage information through amt_process_paged()
+    $content_desc = amt_get_content_description($post);
+    if ( !empty($content_desc) ) {
+        $metadata_arr[] = '<meta itemprop="description" content="' . esc_attr( amt_process_paged( $content_desc ) ) . '" />';
+    }
+
+    // Section: We use the first category as the section
+    $first_cat = sanitize_text_field( amt_sanitize_keywords( amt_get_first_category($post) ) );
+    if (!empty($first_cat)) {
+        $metadata_arr[] = '<meta itemprop="articleSection" content="' . esc_attr( $first_cat ) . '" />';
+    }
+
+    // Keywords - We use the keywords defined by Add-Meta-Tags
+    $keywords = amt_get_content_keywords($post);
+    if (!empty($keywords)) {
+        $metadata_arr[] = '<meta itemprop="keywords" content="' . esc_attr( $keywords ) . '" />';
+    }
+
+    // Language
+    $metadata_arr[] = '<meta itemprop="inLanguage" content="' . esc_attr( str_replace('-', '_', get_bloginfo('language')) ) . '" />';
+
+    // Thumbnail URL
+    if ( function_exists('has_post_thumbnail') && has_post_thumbnail($post->ID) ) {
+        $thumbnail_info = wp_get_attachment_image_src( get_post_thumbnail_id($post->ID), 'thumbnail' );
+        $metadata_arr[] = '<meta itemprop="thumbnailUrl" content="' . esc_url_raw( $thumbnail_info[0] ) . '" />';
+    }
+
+    // Scope BEGIN: ImageObject: http://schema.org/ImageObject
+    $metadata_arr[] = '<span itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject">';
+    // Image
+    if ( function_exists('has_post_thumbnail') && has_post_thumbnail($post->ID) ) {
+        $thumbnail_info = wp_get_attachment_image_src( get_post_thumbnail_id($post->ID), 'medium' );
+        $metadata_arr[] = '<meta itemprop="contentURL" content="' . esc_url_raw( $thumbnail_info[0] ) . '" />';
+        $metadata_arr[] = '<meta itemprop="width" content="' . esc_attr( $thumbnail_info[1] ) . '" />';
+        $metadata_arr[] = '<meta itemprop="height" content="' . esc_attr( $thumbnail_info[2] ) . '" />';
+    } elseif ( is_attachment() && wp_attachment_is_image($post->ID) ) { // is attachment page and contains an image.
+        $attachment_image_info = wp_get_attachment_image_src( get_post_thumbnail_id($post->ID), 'large' );
+        $metadata_arr[] = '<meta itemprop="contentURL" content="' . esc_url_raw( $attachment_image_info[0] ) . '" />';
+        $metadata_arr[] = '<meta itemprop="encodingFormat" content="' . esc_attr( get_post_mime_type($post->ID) ) . '" />';
+        $metadata_arr[] = '<meta itemprop="width" content="' . esc_attr( $attachment_image_info[1] ) . '" />';
+        $metadata_arr[] = '<meta itemprop="height" content="' . esc_attr( $attachment_image_info[2] ) . '" />';
+    } elseif (!empty($options["default_image_url"])) {
+        // Alternatively, use default image
+        $metadata_arr[] = '<meta itemprop="contentURL" content="' . esc_url_raw( $options["default_image_url"] ) . '" />';
+    }
+    // TODO: caption
+    // Scope END: ImageObject
+    $metadata_arr[] = '</span> <!-- Scope END: ImageObject -->';
     
-    Possible values: TRUE, FALSE
-    Default: TRUE
-*/
-$include_keywords_in_single_posts = TRUE;
+    // Video
+    $video_url = amt_get_video_url();
+    if (!empty($video_url)) {
+        // Scope BEGIN: VideoObject: http://schema.org/VideoObject
+        // See: http://googlewebmastercentral.blogspot.gr/2012/02/using-schemaorg-markup-for-videos.html
+        // See: https://support.google.com/webmasters/answer/2413309?hl=en
+        $metadata_arr[] = '<span itemprop="video" itemscope itemtype="http://schema.org/VideoObject">';
+        // Video Embed URL
+        $metadata_arr[] = '<meta itemprop="embedURL" content="' . esc_url_raw( $video_url ) . '" />';
+        // Scope END: VideoObject
+        $metadata_arr[] = '</span> <!-- Scope END: VideoObject -->';
+    }
 
-/*
-Translation Domain
+    // Dates
+    $metadata_arr[] = '<meta itemprop="datePublished" content="' . esc_attr( amt_iso8601_date($post->post_date) ) . '" />';
+    $metadata_arr[] = '<meta itemprop="dateModified" content="' . esc_attr( amt_iso8601_date($post->post_modified) ) . '" />';
+    $metadata_arr[] = '<meta itemprop="copyrightYear" content="' . esc_attr( mysql2date('Y', $post->post_date) ) . '" />';
 
-Translation files are searched in: wp-content/plugins
-*/
-load_plugin_textdomain('add-meta-tags', 'wp-content/plugins');
+    // Publisher
+    // Scope BEGIN: Organization: http://schema.org/Organization
+    $metadata_arr[] = '<span itemprop="publisher" itemscope itemtype="http://schema.org/Organization">';
+    // name
+    $metadata_arr[] = '<meta itemprop="name" content="' . esc_attr( get_bloginfo('name') ) . '" />';
+    // description
+    // First use the site description from the Add-Meta-Tags settings
+    $site_description = $options["site_description"];
+    if ( empty($site_description) ) {
+        // Alternatively, use the blog description
+        // Here we sanitize the provided description for safety
+        $site_description = sanitize_text_field( amt_sanitize_description( get_bloginfo('description') ) );
+    }
+    $metadata_arr[] = '<meta itemprop="description" content="' . esc_attr( $site_description ) . '" />';
+    // logo
+    if ( !empty($options["default_image_url"]) ) {
+        $metadata_arr[] = '<meta itemprop="logo" content="' . esc_url_raw( $options["default_image_url"] ) . '" />';
+    }
+    // url
+    // If a Google+ publisher profile URL has been provided, it has priority,
+    // Otherwise fall back to the WordPress blog home url.
+    $googleplus_publisher_url = get_the_author_meta('amt_googleplus_publisher_profile_url', $post->post_author);
+    if ( !empty($googleplus_publisher_url) ) {
+        $metadata_arr[] = '<meta itemprop="url" content="' . esc_url_raw( $googleplus_publisher_url, array('http', 'https') ) . '" />';
+    } else {
+        $metadata_arr[] = '<meta itemprop="url" content="' . esc_url_raw( get_bloginfo('url') ) . '" />';
+    }
+    // Scope END: Organization
+    $metadata_arr[] = '</span> <!-- Scope END: Organization -->';
 
-/*
-Admin Panel
-*/
+    // Author
+    // Scope BEGIN: Person: http://schema.org/Person
+    $metadata_arr[] = '<span itemprop="author" itemscope itemtype="http://schema.org/Person">';
+    // name
+    $display_name = get_the_author_meta('display_name', $post->post_author);
+    $metadata_arr[] = '<meta itemprop="name" content="' . esc_attr( $display_name ) . '" />';
+    // description
+    // Here we sanitize the provided description for safety
+    $author_description = sanitize_text_field( amt_sanitize_description( get_the_author_meta('description', $post->post_author) ) );
+    if ( !empty($author_description) ) {
+        $metadata_arr[] = '<meta itemprop="description" content="' . esc_attr( $author_description ) . '" />';
+    }
+    // image
+    // Try to get the gravatar
+    // Note: We do not use the get_avatar() function since it returns an img element.
+    // Here wqe do not check if "Show Avatars" is unchecked in Settings > Discussion
+    // $gravatar_img = get_avatar( get_the_author_meta('ID', $post->post_author), 96, '', get_the_author_meta('display_name', $post->post_author) );
+    $author_email = sanitize_email( get_the_author_meta('user_email', $post->post_author) );
+    if ( !empty( $author_email ) ) {
+        // Contruct gravatar link
+        $gravatar_url = "http://www.gravatar.com/avatar/" . md5( $author_email ) . "?s=" . 128;
+        $metadata_arr[] = '<meta itemprop="image" content="' . esc_url_raw( $gravatar_url ) . '" />';
+    }
+    // url
+    // If a Google+ author profile URL has been provided, it has priority,
+    // Otherwise fall back to the WordPress author archive.
+    $googleplus_author_url = get_the_author_meta('amt_googleplus_author_profile_url', $post->post_author);
+    if ( !empty($googleplus_author_url) ) {
+        $metadata_arr[] = '<meta itemprop="url" content="' . esc_url_raw( $googleplus_author_url, array('http', 'https') ) . '" />';
+    } else {
+        $metadata_arr[] = '<meta itemprop="url" content="' . esc_url_raw( get_author_posts_url( get_the_author_meta( 'ID', $post->post_author ) ) ) . '" />';
+    }
+    // Note: The get_the_author_meta('user_url') is used in the sameAs itemprop.
+    $user_url = get_the_author_meta('user_url');
+    if ( !empty($user_url) ) {
+        $metadata_arr[] = '<meta itemprop="sameAs" content="' . esc_url_raw( $user_url, array('http', 'https') ) . '" />';
+    }
+    // Scope END: Person
+    $metadata_arr[] = '</span> <!-- Scope END: Person -->';
 
-function amt_add_pages() {
-	add_options_page(__('Meta Tags Options', 'add-meta-tags'), __('Meta Tags', 'add-meta-tags'), 8, __FILE__, 'amt_options_page');
+    // Article Body
+    // The article body is added after filtering the generated microdata below.
+
+    // TODO: also check: comments, contributor, copyrightHolder, , creator, dateCreated, discussionUrl, editor, version (use post revision if possible)
+    // Scope END: Article
+    $metadata_arr[] = '</span> <!-- Scope END: Article -->';
+
+
+    // Filtering of the generated Schema.org metadata
+    $metadata_arr = apply_filters( 'amt_schemaorg_metadata_content', $metadata_arr );
+
+    // Add articleBody to content
+    // Now add the article. Remove last closing '</span>' tag, add articleBody and re-add the closing span afterwards.
+    $closing_article_tag = array_pop($metadata_arr);
+    $metadata_arr[] = '<span itemprop="articleBody">';
+    $metadata_arr[] = $post_body;
+    $metadata_arr[] = '</span> <!-- Itemprop END: articleBody -->';
+    // Now add closing tag for Article
+    $metadata_arr[] = $closing_article_tag;
+
+    // Add our comment
+    if ( count( $metadata_arr ) > 0 ) {
+        array_unshift( $metadata_arr, "<!-- BEGIN Microdata added by Add-Meta-Tags WordPress plugin -->" );
+        array_push( $metadata_arr, "<!-- END Microdata added by Add-Meta-Tags WordPress plugin -->" );
+    }
+
+    //return $post_body;
+    return implode( PHP_EOL, $metadata_arr );
 }
+add_filter('the_content', 'amt_add_schemaorg_metadata_content_filter', 500, 1);
 
-function amt_show_info_msg($msg) {
-	echo '<div id="message" class="updated fade"><p>' . $msg . '</p></div>';
+
+/**
+ * Replaces the text to be used in the title element, if a replacement text has been set.
+ */
+function amt_custom_title_tag($title) {
+
+    // Get current post object
+    $post = get_queried_object();
+
+    // Check if metadata is supported on this content type.
+    $post_type = get_post_type( $post );
+    if ( ! in_array( $post_type, amt_get_supported_post_types() ) ) {
+        return $title;
+    }
+
+    if ( is_singular() || amt_is_static_front_page() || amt_is_static_home() ) {
+        
+        $custom_title = amt_get_post_meta_title( $post->ID );
+        if ( !empty($custom_title) ) {
+            $custom_title = str_replace('%title%', $title, $custom_title);
+            // Note: Contains multipage information through amt_process_paged()
+            return esc_attr( amt_process_paged( $custom_title ) );
+        }
+    }
+    // WordPress adds multipage information if a custom title is not set.
+    return $title;
 }
-
-function amt_options_page() {
-	if (isset($_POST['info_update'])) {
-		/*
-		For a little bit more security and easier maintenance, a separate options array is used.
-		*/
-
-		//var_dump($_POST);
-		$options = array(
-			"site_description"	=> $_POST["site_description"],
-			"site_keywords"		=> $_POST["site_keywords"],
-			"site_wide_meta"	=> $_POST["site_wide_meta"],
-			);
-		update_option("add_meta_tags_opts", $options);
-		amt_show_info_msg(__('Add-Meta-Tags options saved.', 'add-meta-tags'));
-
-	} elseif (isset($_POST["info_reset"])) {
-
-		delete_option("add_meta_tags_opts");
-		amt_show_info_msg(__('Add-Meta-Tags options deleted from the WordPress database.', 'add-meta-tags'));
-
-		/*
-		The following exists for deleting old add-meta-tags options (version 1.0 or older).
-		The following statement have no effect if the options do not exist.
-		This is 100% safe (TM).
-		*/
-		delete_option('amt_site_description');
-		delete_option('amt_site_keywords');
-
-	} else {
-
-		$options = get_option("add_meta_tags_opts");
-
-	}
-
-	/*
-	Configuration Page
-	*/
-	
-	print('
-	<div class="wrap">
-		<h2>'.__('Add-Meta-Tags', 'add-meta-tags').'</h2>
-		<p>'.__('This is where you can configure the Add-Meta-Tags plugin and read about how the plugin adds META tags in the WordPress pages.', 'add-meta-tags').'</p>
-		<p>'.__('Modifying any of the settings in this page is completely <strong>optional</strong>, as the plugin will add META tags automatically.', 'add-meta-tags').'</p>
-		<p>'.__("For more information about the plugin's default behaviour and how you could customize the metatag generation can be found in detail in the sections that follow.", "add-meta-tags").'</p>
-	</div>
-
-	<div class="wrap">
-		<h2>'.__('Configuration', 'add-meta-tags').'</h2>
-
-		<form name="formamt" method="post" action="' . $_SERVER['REQUEST_URI'] . '">
-
-			<fieldset class="options">
-				<legend>'.__('Site Description', 'add-meta-tags').'<br />
-					<p>'.__('The following text will be used in the "description" meta tag on the <strong>homepage only</strong>. If this is left <strong>empty</strong>, then the blog\'s description from the <em>General Options</em> (Tagline) will be used.', 'add-meta-tags').'</p>
-					<p><textarea name="site_description" id="site_description" cols="40" rows="3" style="width: 80%; font-size: 14px;" class="code">' . stripslashes($options["site_description"]) . '</textarea></p>
-				</legend>
-			</fieldset>
-
-			<fieldset class="options">
-				<legend>'.__('Site Keywords', 'add-meta-tags').'<br />
-					<p>'.__('The following keywords will be used for the "keywords" meta tag on the <strong>homepage only</strong>. Provide a comma-delimited list of keywords for your blog. If this field is left <strong>empty</strong>, then all of your blog\'s categories will be used as keywords for the "keywords" meta tag.', 'add-meta-tags').'</p>
-					<p><textarea name="site_keywords" id="site_keywords" cols="40" rows="3" style="width: 80%; font-size: 14px;" class="code">' . stripslashes($options["site_keywords"]) . '</textarea></p>
-					<p><strong>'.__('Example', 'add-meta-tags').'</strong>: <code>'.__('keyword1, keyword2, keyword3', 'add-meta-tags').'</code></p>
-				</legend>
-			</fieldset>
-
-			<fieldset class="options">
-				<legend>'.__('Site-wide META tags', 'add-meta-tags').'<br />
-					<p>'.__('Provide the <strong>full XHTML code</strong> of META tags you would like to be included in <strong>all</strong> of your blog pages.', 'add-meta-tags').'</p>
-					<p><textarea name="site_wide_meta" id="site_wide_meta" cols="40" rows="10" style="width: 80%; font-size: 14px;" class="code">' . stripslashes($options["site_wide_meta"]) . '</textarea></p>
-					<p><strong>'.__('Example', 'add-meta-tags').'</strong>: <code>&lt;meta name="robots" content="index,follow" /&gt;</code></p>
-				</legend>
-			</fieldset>
-
-			<p class="submit">
-				<input type="submit" name="info_update" value="'.__('Update Options', 'add-meta-tags').' &raquo;" />
-			</p>
-
-		</form>
-	</div>
-
-	<div class="wrap"> 
-		<h2>'.__('Meta Tags on the Front Page', 'add-meta-tags').'</h2>
-		<p>'.__('If a site description and/or keywords have been set in the Add-Meta-Tags options above, then those will be used in the "<em>description</em>" and "<em>keywords</em>" META tags respectively.', 'add-meta-tags').'</p>
-		<p>'.__('Alternatively, if the above options are not set, then the blog\'s description from the <em>General</em> WordPress options will be used in the "<em>description</em>" META tag, while all of the blog\'s categories, except for the "Uncategorized" category, will be used in the "<em>keywords</em>" META tag.', 'add-meta-tags').'</p>
-	</div>
-
-	<div class="wrap">
-		<h2>'.__('Meta Tags on Single Posts', 'add-meta-tags').'</h2>
-		<p>'.__('Although no configuration is needed in order to put meta tags on single posts, the following information will help you customize them.', 'add-meta-tags').'</p>
-		<p>'.__('By default, when a single post is displayed, the post\'s excerpt and the post\'s categories and tags are used in the "description" and the "keywords" meta tags respectively.', 'add-meta-tags').'</p>
-		<p>'.__('It is possible to override them by providing a custom description in a custom field named "<strong>description</strong>" and a custom comma-delimited list of keywords by providing it in a custom field named "<strong>keywords</strong>".', 'add-meta-tags').'</p>
-		<p>'.__("Furthermore, when overriding the post's keywords, but you need to include the post's categories too, you don't need to type them, but the tag <code>%cats%</code> can be used. In the same manner you can also include your tags in this custom field by adding the word <code>%tags%</code>, which will be replaced by your post's tags.", "add-meta-tags").'</p>
-		<p><strong>'.__('Example', 'add-meta-tags').':</strong> <code>'.__('keyword1, keyword2, %cats%, keyword3, %tags%, keyword4', 'add-meta-tags').'</code></p>
-	</div>
-
-	<div class="wrap">
-		<h2>'.__('Meta Tags on Pages', 'add-meta-tags').'</h2>
-		<p>'.__('By default, meta tags are not added automatically when viewing Pages. However, it is possible to define a description and a comma-delimited list of keywords for the Page, by using custom fields named "<strong>description</strong>" and/or "<strong>keywords</strong>" as described for single posts.', 'add-meta-tags').'</p>
-		<p>'.__('<strong>WARNING</strong>: Pages do not belong to categories in WordPress. Therefore, the tag <code>%cats%</code> will not be replaced by any categories if it is included in the comma-delimited list of keywords for the Page, so <strong>do not use it for Pages</strong>.', 'add-meta-tags').'</p>
-	</div>
-
-	<div class="wrap">
-		<h2>'.__('Meta Tags on Category Archives', 'add-meta-tags').'</h2>
-		<p>'.__('META tags are automatically added to Category Archives, for example when viewing all posts that belong to a specific category. In this case, if you have set a description for that category, then this description is added to a "description" META tag.', 'add-meta-tags').'</p>
-		<p>'.__('Furthermore, a "keywords" META tag - containing only the category\'s name - is always added to Category Archives.', 'add-meta-tags').'</p>
-	</div>
-
-	<div class="wrap">
-		<h2>'.__('Reset Plugin', 'add-meta-tags').'</h2>
-		<form name="formamtreset" method="post" action="' . $_SERVER['REQUEST_URI'] . '">
-			<p>'.__('By pressing the "Reset" button, the plugin will be reset. This means that the stored options will be deleted from the WordPress database. Although it is not necessary, you should consider doing this before uninstalling the plugin, so no trace is left behind.', 'add-meta-tags').'</p>
-			<p class="submit">
-				<input type="submit" name="info_reset" value="'.__('Reset Options', 'add-meta-tags').'" />
-			</p>
-		</from>
-	</div>
-
-	');
-
-}
+add_filter('wp_title', 'amt_custom_title_tag', 1000);
 
 
+/**
+ * Returns an array of all the generated metadata for the head area.
+ */
+function amt_get_metadata_head() {
 
-function amt_clean_desc($desc) {
-	/*
-	This is a filter for the description metatag text.
-	*/
-	$desc = stripslashes($desc);
-	$desc = strip_tags($desc);
-	$desc = htmlspecialchars($desc);
-	//$desc = preg_replace('/(\n+)/', ' ', $desc);
-	$desc = preg_replace('/([\n \t\r]+)/', ' ', $desc); 
-	$desc = preg_replace('/( +)/', ' ', $desc);
-	return trim($desc);
-}
+    // Get the options the DB
+    $options = get_option("add_meta_tags_opts");
+    $do_add_metadata = true;
 
+    $metadata_arr = array();
 
-function amt_get_the_excerpt($excerpt_max_len = 300, $desc_avg_length = 250, $desc_min_length = 150) {
-	/*
-	Returns the post's excerpt.
-	This was written in order to get the excerpt *outside* the loop
-	because the get_the_excerpt() function does not work there any more.
-	This function makes the retrieval of the excerpt independent from the
-	WordPress function in order not to break compatibility with older WP versions.
-	
-	Also, this is even better as the algorithm tries to get text of average
-	length 250 characters, which is more SEO friendly. The algorithm is not
-	perfect, but will do for now.
-	*/
-	global $posts;
+    // Check for NOINDEX,FOLLOW on archives.
+    // There is no need to further process metadata as we explicitly ask search
+    // engines not to index the content.
+    if ( is_archive() || is_search() ) {
+        if (
+            ( is_search() && ($options["noindex_search_results"] == "1") )  ||          // Search results
+            ( is_date() && ($options["noindex_date_archives"] == "1") )  ||             // Date and time archives
+            ( is_category() && ($options["noindex_category_archives"] == "1") )  ||     // Category archives
+            ( is_tag() && ($options["noindex_tag_archives"] == "1") )  ||               // Tag archives
+            ( is_author() && ($options["noindex_author_archives"] == "1") )             // Author archives
+        ) {
+            $metadata_arr[] = '<meta name="robots" content="NOINDEX,FOLLOW" />';
+            $do_add_metadata = false;   // No need to process metadata
+        }
+    }
 
-	if ( empty($posts[0]->post_excerpt) ) {
+    // Get current post object
+    $post = get_queried_object();
 
-		/*
-		Get the initial data for the excerpt
-		*/
-		$amt_excerpt = strip_tags(substr($posts[0]->post_content, 0, $excerpt_max_len));
+    // Check if metadata should be added to this content type.
+    $post_type = get_post_type( $post );
+    if ( ! in_array( $post_type, amt_get_supported_post_types() ) ) {
+        $do_add_metadata = false;
+    }
 
-		/*
-		If this was not enough, try to get some more clean data for the description (nasty hack)
-		*/
-		if ( strlen($amt_excerpt) < $desc_avg_length ) {
-			$amt_excerpt = strip_tags(substr($posts[0]->post_content, 0, (int) ($excerpt_max_len * 1.5)));
-			if ( strlen($amt_excerpt) < $desc_avg_length ) {
-				$amt_excerpt = strip_tags(substr($posts[0]->post_content, 0, (int) ($excerpt_max_len * 2)));
-			}
-		}
+    // Add Metadata
+    if ($do_add_metadata) {
 
-		$end_of_excerpt = strrpos($amt_excerpt, ".");
+        // Basic Meta tags
+        $metadata_arr = array_merge($metadata_arr, amt_add_basic_metadata_head($post));
+        //var_dump(amt_add_basic_metadata());
+        // Add Opengraph
+        $metadata_arr = array_merge($metadata_arr, amt_add_opengraph_metadata_head($post));
+        // Add Twitter Cards
+        $metadata_arr = array_merge($metadata_arr, amt_add_twitter_cards_metadata_head($post));
+        // Add Dublin Core
+        $metadata_arr = array_merge($metadata_arr, amt_add_dublin_core_metadata_head($post));
+        // Add Google+ Author/Publisher links
+        $metadata_arr = array_merge($metadata_arr, amt_add_schemaorg_metadata_head($post));
+    }
 
-		if ($end_of_excerpt) {
-			/*
-			if there are sentences, end the description at the end of a sentence.
-			*/
-			$amt_excerpt_test = substr($amt_excerpt, 0, $end_of_excerpt + 1);
+    // Allow filtering of the all the generated metatags
+    $metadata_arr = apply_filters( 'amt_metadata_head', $metadata_arr );
 
-			if ( strlen($amt_excerpt_test) < $desc_min_length ) {
-				/*
-				don't end at the end of the sentence because the description would be too small
-				*/
-				$amt_excerpt .= "...";
-			} else {
-				/*
-				If after ending at the end of a sentence the description has an acceptable length, use this
-				*/
-				$amt_excerpt = $amt_excerpt_test;
-			}
-		} else {
-			/*
-			otherwise (no end-of-sentence in the excerpt) add this stuff at the end of the description.
-			*/
-			$amt_excerpt .= "...";
-		}
+    // Add our comment
+    if ( count( $metadata_arr ) > 0 ) {
+        array_unshift( $metadata_arr, "<!-- BEGIN Metadata added by Add-Meta-Tags WordPress plugin -->" );
+        array_push( $metadata_arr, "<!-- END Metadata added by Add-Meta-Tags WordPress plugin -->" );
+    }
 
-	} else {
-		/*
-		When the post excerpt has been set explicitly, then it has priority.
-		*/
-		$amt_excerpt = $posts[0]->post_excerpt;
-	}
-
-	return $amt_excerpt;
+    return $metadata_arr;
 }
 
 
-function amt_get_keywords_from_post_cats() {
-	/*
-	Returns a comma-delimited list of a post's categories.
-	*/
-	global $posts;
-
-	$postcats = "";
-	foreach((get_the_category($posts[0]->ID)) as $cat) {
-		$postcats .= $cat->cat_name . ', ';
-	}
-	$postcats = substr($postcats, 0, -2);
-
-	return $postcats;
+/**
+ * Prints the generated metadata for the head area.
+ */
+function amt_add_metadata_head() {
+    echo PHP_EOL . implode(PHP_EOL, amt_get_metadata_head()) . PHP_EOL . PHP_EOL;
 }
-
-function amt_get_post_tags() {
-	/*
-	Retrieves the post's user-defined tags.
-	
-	This will only work in WordPress 2.3 or newer. On older versions it will
-	return an empty string.
-	*/
-	global $posts;
-	
-	if ( version_compare( get_bloginfo('version'), '2.3', '>=' ) ) {
-		$tags = get_the_tags($posts[0]->ID);
-		if ( empty( $tags ) ) {
-			return false;
-		} else {
-			$tag_list = "";
-			foreach ( $tags as $tag ) {
-				$tag_list .= $tag->name . ', ';
-			}
-			$tag_list = strtolower(rtrim($tag_list, " ,"));
-			return $tag_list;
-		}
-	} else {
-		return "";
-	}
-}
+add_action('wp_head', 'amt_add_metadata_head', 0);
 
 
-function amt_get_all_categories($no_uncategorized = TRUE) {
-	/*
-	Returns a comma-delimited list of all the blog's categories.
-	The built-in category "Uncategorized" is excluded.
-	*/
-	global $wpdb;
+/**
+ * Returns an array of all the generated metadata for the footer area.
+ */
+function amt_get_metadata_footer() {
 
-	if ( version_compare( get_bloginfo('version'), '2.3', '>=' ) ) {
-		$cat_field = "name";
-		$sql = "SELECT name FROM $wpdb->terms LEFT OUTER JOIN $wpdb->term_taxonomy ON ($wpdb->terms.term_id = $wpdb->term_taxonomy.term_id) WHERE $wpdb->term_taxonomy.taxonomy = 'category' ORDER BY name ASC";
-	} else {
-		$cat_field = "cat_name";
-		$sql = "SELECT cat_name FROM $wpdb->categories ORDER BY cat_name ASC";
-	}
-	$categories = $wpdb->get_results($sql);
-	if ( empty( $categories ) ) {
-		return "";
-	} else {
-		$all_cats = "";
-		foreach ( $categories as $cat ) {
-			if ($no_uncategorized && $cat->$cat_field != "Uncategorized") {
-				$all_cats .= $cat->$cat_field . ', ';
-			}
-		}
-		$all_cats = strtolower(rtrim($all_cats, " ,"));
-		return $all_cats;
-	}
+    // Get the options the DB
+    $options = get_option("add_meta_tags_opts");
+    $do_add_metadata = true;
+
+    $metadata_arr = array();
+
+    // Get current post object
+    $post = get_queried_object();
+
+    // Check if metadata should be added to this content type.
+    $post_type = get_post_type( $post );
+    if ( ! in_array( $post_type, amt_get_supported_post_types() ) ) {
+        $do_add_metadata = false;
+    }
+
+    // Add Metadata
+    if ($do_add_metadata) {
+
+        // Add Schema.org Microdata
+        $metadata_arr = array_merge($metadata_arr, amt_add_schemaorg_metadata_footer($post));
+    }
+
+    // Allow filtering of all the generated metatags
+    $metadata_arr = apply_filters( 'amt_metadata_footer', $metadata_arr );
+
+    // Add our comment
+    if ( count( $metadata_arr ) > 0 ) {
+        array_unshift( $metadata_arr, "<!-- BEGIN Metadata added by Add-Meta-Tags WordPress plugin -->" );
+        array_push( $metadata_arr, "<!-- END Metadata added by Add-Meta-Tags WordPress plugin -->" );
+    }
+
+    return $metadata_arr;
 }
 
 
-function amt_get_site_wide_metatags($site_wide_meta) {
-	/*
-	This is a filter for the site-wide meta tags.
-	*/
-	$site_wide_meta = stripslashes($site_wide_meta);
-	$site_wide_meta = trim($site_wide_meta);
-	return $site_wide_meta;
+/**
+ * Prints the generated metadata for the footer area.
+ */
+function amt_add_metadata_footer() {
+    echo PHP_EOL . implode(PHP_EOL, amt_get_metadata_footer()) . PHP_EOL . PHP_EOL;
+}
+add_action('wp_footer', 'amt_add_metadata_footer', 0);
+
+
+/**
+ * Review mode
+ */
+
+function amt_get_metadata_review() {
+    //
+    //  TODO: FIX THIS MESS
+    //
+    //return '<pre>' . amt_metatag_highlighter( htmlspecialchars( amt_add_schemaorg_metadata_content_filter('dzfgdzfdzfdszfzf'), ENT_NOQUOTES) ) . '</pre>';
+    // Returns metadata review code
+    //return '<pre>' . htmlentities( implode(PHP_EOL, amt_get_metadata_head()) ) . '</pre>';
+    $msg = '<span style="text-decoration: underline; color: black;"><span style="font-weight: bold;">NOTE</span>: This box is displayed because <span style="font-weight: bold;">Review Mode</span> has been enabled in' . PHP_EOL . 'the Add-Meta-Tags settings. Only logged in administrators can see this box.</span>' . PHP_EOL . PHP_EOL;
+    $msg_body = '<span style="text-decoration: underline; color: black;">The following metadata has been embedded in the body.</span>';
+    $metadata = '<pre>';
+    $metadata .= $msg . amt_metatag_highlighter( implode(PHP_EOL, amt_get_metadata_head()) ) . PHP_EOL;
+    $metadata .= PHP_EOL . $msg_body . PHP_EOL . PHP_EOL . amt_metatag_highlighter( amt_add_schemaorg_metadata_content_filter('') ) . PHP_EOL;
+    $metadata .= PHP_EOL . amt_metatag_highlighter( implode(PHP_EOL, amt_get_metadata_footer()) ) . PHP_EOL;
+    $metadata .= '</pre>';
+    return $metadata;
+    //return '<pre lang="XML" line="1">' . implode(PHP_EOL, amt_get_metadata_head()) . '</pre>';
 }
 
+function amt_add_metadata_review($post_body) {
 
+    // Get current post object
+    $post = get_queried_object();
 
-function amt_add_meta_tags() {
-	/*
-	This is the main function that actually writes the meta tags to the
-	appropriate page.
-	*/
-	global $posts, $include_keywords_in_single_posts;
+    // Check if metadata is supported on this content type.
+    $post_type = get_post_type( $post );
+    if ( ! in_array( $post_type, amt_get_supported_post_types() ) ) {
+        return $post_body;
+    }
 
-	/*
-	Get the options the DB
-	*/
-	$options = get_option("add_meta_tags_opts");
-	$site_wide_meta = $options["site_wide_meta"];
+    if ( is_singular() || amt_is_static_front_page() ) {
 
-	$my_metatags = "";
+        // Check if Review Mode is enabled
+        $options = get_option("add_meta_tags_opts");
+        if ( $options["review_mode"] == "0" ) {
+            return $post_body;
+        }
 
-	if ( is_single() || is_page() ) {
-		/*
-		Add META tags to Single Page View or Page
-		*/
+        // Adds metadata review code only for admins
+        $user_info = get_userdata(get_current_user_id());
+        
+        // See: http://codex.wordpress.org/User_Levels
+        // Admin -> User level 10
+        if ( $user_info->user_level == '10' ) {
+            $post_body = amt_get_metadata_review() . '<br /><br />' . $post_body;
+        }
 
-		/*
-		Custom Field names
-		*/
-		$desc_fld = "description";
-		$keyw_fld = "keywords";
+    }
 
-		/*
-		Description
-		Custom post field "description" overrides post's excerpt in Single Post View.
-		*/
-		$desc_fld_content = get_post_meta($posts[0]->ID, $desc_fld, true);
-		if ( !empty($desc_fld_content) ) {
-			/*
-			If there is a custom field, use it
-			*/
-			$my_metatags .= "\n<meta name=\"description\" content=\"" . amt_clean_desc($desc_fld_content) . "\" />";
-		} elseif ( is_single() ) {
-			/*
-			Else, use the post's excerpt. Only for Single Post View (not valid for Pages)
-			*/
-			$my_metatags .= "\n<meta name=\"description\" content=\"" . amt_clean_desc(amt_get_the_excerpt()) . "\" />";
-		}
-
-		/*
-		Keywords
-		Custom post field "keywords" overrides post's categories and tags (tags exist in WordPress 2.3 or newer).
-		%cats% is replaced by the post's categories.
-		%tags% us replaced by the post's tags.
-		NOTE: if $include_keywords_in_single_posts is FALSE, then keywords
-		metatag is not added to single posts.
-		*/
-		if ( ($include_keywords_in_single_posts && is_single()) || is_page() ) {
-			$keyw_fld_content = get_post_meta($posts[0]->ID, $keyw_fld, true);
-			if ( !empty($keyw_fld_content) ) {
-				/*
-				If there is a custom field, use it
-				*/
-				if ( is_single() ) {
-					/*
-					For single posts, the %cat% tag is replaced by the post's categories
-					*/
-					$keyw_fld_content = str_replace("%cats%", amt_get_keywords_from_post_cats(), $keyw_fld_content);
-					/*
-					Also, the %tags% tag is replaced by the post's tags (WordPress 2.3 or newer)
-					*/
-					if ( version_compare( get_bloginfo('version'), '2.3', '>=' ) ) {
-						$keyw_fld_content = str_replace("%tags%", amt_get_post_tags(), $keyw_fld_content);
-					}
-				}
-				$my_metatags .= "\n<meta name=\"keywords\" content=\"" . strtolower($keyw_fld_content) . "\" />";
-			} elseif ( is_single() ) {
-				/*
-				Add keywords automatically.
-				Keywords consist of the post's categories and the post's tags (tags exist in WordPress 2.3 or newer).
-				Only for Single Post View (not valid for Pages)
-				*/
-				$my_metatags .= "\n<meta name=\"keywords\" content=\"" . strtolower(amt_get_keywords_from_post_cats());
-				$post_tags = strtolower(amt_get_post_tags());
-				if ( $post_tags ) {
-					$my_metatags .= ", " . $post_tags;
-				}
-				$my_metatags .= "\" />";
-			}
-		}
-
-
-	} elseif ( is_home() ) {
-		/*
-		Add META tags to Home Page
-		*/
-		
-		/*
-		Description and Keywords from the options override default behaviour
-		*/
-		$site_description = $options["site_description"];
-		$site_keywords = $options["site_keywords"];
-
-		/*
-		Description
-		*/
-		if ( empty($site_description) ) {
-			/*
-			If $site_description is empty, then use the blog description from the options
-			*/
-			$my_metatags .= "\n<meta name=\"description\" content=\"" . amt_clean_desc(get_bloginfo('description')) . "\" />";
-		} else {
-			/*
-			If $site_description has been set, then use it in the description meta-tag
-			*/
-			$my_metatags .= "\n<meta name=\"description\" content=\"" . amt_clean_desc($site_description) . "\" />";
-		}
-		/*
-		Keywords
-		*/
-		if ( empty($site_keywords) ) {
-			/*
-			If $site_keywords is empty, then all the blog's categories are added as keywords
-			*/
-			$my_metatags .= "\n<meta name=\"keywords\" content=\"" . amt_get_all_categories() . "\" />";
-		} else {
-			/*
-			If $site_keywords has been set, then these keywords are used.
-			*/
-			$my_metatags .= "\n<meta name=\"keywords\" content=\"" . $site_keywords . "\" />";
-		}
-
-
-	} elseif ( is_category() ) {
-		/*
-		Writes a description META tag only if a description for the current category has been set.
-		*/
-
-		$cur_cat_desc = category_description();
-		if ( $cur_cat_desc ) {
-			$my_metatags .= "\n<meta name=\"description\" content=\"" . amt_clean_desc($cur_cat_desc) . "\" />";
-		}
-		
-		/*
-		Write a keyword metatag if there is a category name (always)
-		*/
-		$cur_cat_name = single_cat_title($prefix = '', $display = false );
-		if ( $cur_cat_name ) {
-			$my_metatags .= "\n<meta name=\"keywords\" content=\"" . strtolower($cur_cat_name) . "\" />";
-		}
-	}
-
-	if ($my_metatags) {
-		echo "\n<!-- META Tags added by Add-Meta-Tags WordPress plugin. Get it at: http://www.g-loaded.eu/ -->" . $my_metatags . "\n" . amt_get_site_wide_metatags($site_wide_meta) . "\n\n";
-	}
+    return $post_body;
 }
 
-/*
-Actions
-*/
-
-add_action('admin_menu', 'amt_add_pages');
-
-add_action('wp_head', 'amt_add_meta_tags', 0);
+add_filter('the_content', 'amt_add_metadata_review', 9999);
 
 ?>
