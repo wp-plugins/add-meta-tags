@@ -68,7 +68,7 @@ function amt_options_page() {
     <div class="wrap">
         <h2>'.__('How it works', 'add-meta-tags').'</h2>
         
-        <p>'.__('Add-Meta-Tags tries to follow the "<em>It just works</em>" principal. By default, the <em>description</em> and <em>keywords</em> meta tags are added to your blog\'s front page, posts, pages, category and tag based archives. Furthermore, it is possible to enable the insertion of <em>Opengraph</em> and <em>Dublin Core</em> metadata to your posts and pages. The plugin also supports some extra SEO related functionality that helps you fine tune your web site.', 'add-meta-tags').'</p>
+        <p>'.__('Add-Meta-Tags tries to follow the "<em>It just works</em>" principal. By default, the <em>description</em> and <em>keywords</em> meta tags are added to the front page, posts, pages, public custom post types, category, tag and author based archives. Furthermore, it is possible to enable the generation of <em>Opengraph</em>, <em>Dublin Core</em>, <em>Twitter Cards</em> and <em>Schema.org</em> metadata. The plugin also supports some extra SEO related functionality that helps you fine tune your web site.', 'add-meta-tags').'</p>
         
         <p>'.__('Customization of the added metadata on a per post/page basis is possible by using the user-friendly <strong>WordPress meta boxes</strong> in the post/page editing panel. In earlier versions of the plugin (before 2.1.0) such customization was possible through custom fields. If you have already used custom fields in order to customize the posts description and keywords in the past, there is nothing to worry about, since the new meta-box functionality is internally based on those custom fields, so there is no migration procedure involved. However, you need to enable the <em>Metadata</em> meta box in the <a href="http://en.support.wordpress.com/screen-options/">Screen Options</a> of the post/page editing panel.', 'add-meta-tags').'</p>
 
@@ -243,8 +243,26 @@ function amt_options_page() {
                 <br />
                 <strong>'.__('Important Note', 'add-meta-tags').'</strong>:
                 <br />
-                '.__('In order to generate the <code>article:author</code> and <code>article:publisher</code> meta tags for your content, it is required to provide the respective URLs of the Facebook profiles of the author and/or publisher of the content. Update your WordPress user\'s <a href="/wp-admin/profile.php">profile page</a> and fill in the relevant URLs under the section \'Contact Info\'.', 'add-meta-tags').'
+                '.__('By default, this feature sets the URL of the front page of your web site to the <code>article:publisher</code> meta tag and the URL of the author archive to the <code>article:author</code> meta tag. In order to link to the publisher page and the author profile on Facebook, it is required to provide the respective URLs. These settings can be added to your WordPress user <a href="/wp-admin/profile.php">profile page</a> under the section <em>Contact Info</em>.', 'add-meta-tags').'
                 <br />
+            </fieldset>
+            </td>
+            </tr>
+
+            <tr valign="top">
+            <th scope="row">'.__('Automatic Twitter Cards Metadata', 'add-meta-tags').'</th>
+            <td>
+            <fieldset>
+                <legend class="screen-reader-text"><span>'.__('Automatic Twitter Cards Metadata', 'add-meta-tags').'</span></legend>
+
+                <input id="auto_twitter" type="checkbox" value="1" name="auto_twitter" '. (($options["auto_twitter"]=="1") ? 'checked="checked"' : '') .'" />
+                <label for="auto_twitter">
+                '.__('Automatically generate Twitter Cards meta tags for posts, pages and custom post types. For more information, please refer to the <a href="https://dev.twitter.com/docs/cards">Twitter Cards specification</a>.', 'add-meta-tags').'
+                </label>
+                <br />
+                <strong>'.__('Important Note', 'add-meta-tags').'</strong>:
+                <br />
+                '.__('In order to generate the <code>twitter:site</code> and <code>twitter:creator</code> meta tags, it is required to provide the respective usernames of the Twitter account of the author and/or publisher of the content. Update your WordPress user\'s <a href="/wp-admin/profile.php">profile page</a> and fill in the relevant usernames under the section \'Contact Info\'.', 'add-meta-tags').'
             </fieldset>
             </td>
             </tr>
@@ -260,6 +278,26 @@ function amt_options_page() {
                 '.__('Automatically generate Dublin Core metadata for single posts and pages. For more information, please refer to <a href="http://dublincore.org">Dublin Core Metadata Initiative</a>.', 'add-meta-tags').'
                 </label>
                 <br />
+            </fieldset>
+            </td>
+            </tr>
+
+            <tr valign="top">
+            <th scope="row">'.__('Automatic Schema.org Metadata', 'add-meta-tags').'</th>
+            <td>
+            <fieldset>
+                <legend class="screen-reader-text"><span>'.__('Automatic Schema.org Metadata', 'add-meta-tags').'</span></legend>
+
+                <input id="auto_schemaorg" type="checkbox" value="1" name="auto_schemaorg" '. (($options["auto_schemaorg"]=="1") ? 'checked="checked"' : '') .'" />
+                <label for="auto_schemaorg">
+                '.__('Automatically generate Microdata and embed it to your content. This feature embeds <code>meta</code> elements inside the body of the web page. This is compatible with the HTML 5 standard, so, before enabling it, make sure your theme is HTML 5 ready. Fore information about Microdata please refer to <a href="http://schema.org">Schema.org</a>.', 'add-meta-tags').'
+                </label>
+                <br />
+                <strong>'.__('Important Notes', 'add-meta-tags').'</strong>:
+                <br /> &raquo; '
+                .__('By default, this feature links the author and publisher objects to the author archive and the front page of your web site respectively. In order to link to the author\'s profile and publisher\'s page on Google+, it is required to provide the respective URLs. These settings can be added to your WordPress user <a href="/wp-admin/profile.php">profile page</a> under the section <em>Contact Info</em>.', 'add-meta-tags').'
+                <br /> &raquo; '
+                .__('Once you have filled in the URLs to the author profile and the publisher page on Google+, the relevant link elements with the <code>rel="author"</code> and <code>rel="publisher"</code> attributes are automatically added to the head area of the web page.', 'add-meta-tags').'
             </fieldset>
             </td>
             </tr>
