@@ -4,7 +4,7 @@ Donate link: http://www.g-loaded.eu/about/donate/
 Tags: amt, meta, metadata, seo, optimize, ranking, description, keywords, metatag, schema, opengraph, dublin core, schema.org, microdata, google, twitter cards, google plus, yahoo, bing, search engine optimization, rich snippets, semantic, structured, meta tags
 Requires at least: 3.0.0
 Tested up to: 3.7
-Stable tag: 2.3.4
+Stable tag: 2.3.6
 License: Apache License v2
 License URI: http://www.apache.org/licenses/LICENSE-2.0.txt
 
@@ -23,7 +23,7 @@ The goals of the Add-Meta-Tags plugin are:
 - provide efficient, out-of-the-box search engine optimization (*SEO*) on a web site powered by WordPress.
 - be customizable, yet simple and easy to use and configure with minimal or no support.
 - be as lightweight as possible.
-- support advanced customization through the WordPress filter/action system (for developers and power users).
+- support advanced customization through the WordPress filter/action system (for developers and advanced users).
 
 
 = What it does =
@@ -141,7 +141,7 @@ When enabled, WordPress users with administrator privileges see a box that conta
 
 = Translations =
 
-There is an ongoing effort to translate Add-Meta-Tags to as many languages as possible. The easiest way to contribute translations is to register to our [translations project](https://www.transifex.com/projects/p/add-meta-tags "Add-Meta-Tags translations project") at the Transifex service.
+There is an ongoing effort to translate Add-Meta-Tags to as many languages as possible. The easiest way to contribute translations is to register to the [translations project](https://www.transifex.com/projects/p/add-meta-tags "Add-Meta-Tags translations project") at the Transifex service.
 
 Once registered, join the team of the language translation you wish to contribute to. If a team does not exist for your language, be the first to create a translation team by requesting the language and start translating.
 
@@ -157,7 +157,7 @@ Please post your questions and provide general feedback and requests at the [Add
 
 To avoid duplicate effort, before asking a question do some research on the forum about a similar question has been answered before.
 
-Also, make sure you read our [FAQ](http://wordpress.org/plugins/add-meta-tags/faq/ "Add-Meta-Tags FAQ").
+Also, make sure you read the [FAQ](http://wordpress.org/plugins/add-meta-tags/faq/ "Add-Meta-Tags FAQ").
 
 
 = Advanced Customization =
@@ -240,18 +240,22 @@ This code can be placed inside your theme's `functions.php` file.
 
 Keep in mind that:
 
-1. AMT internal fields have priority over the external fields. If both the internal field and an external field contain a description, then the description of the internal field is used.
+1. AMT internal fields have priority over the external fields. If both the internal field and an external field contain data, then the data of the internal field is used.
 1. AMT uses external fields to only read data. It never writes to external fields. Whenever the content is saved, every piece of information, which may have been read from an external field, is stored to the relevant AMT internal field. Consequently, when the content is saved, information from external fields is migrated to the AMT internal fields, and external fields have no effect on this specific content any more.
 
 = Custom Fields =
 
-Add-Meta-Tags uses the following internal custom fields to store data:
+Add-Meta-Tags uses the following internal custom fields to store data related to the content:
 
 * `_amt_description` - the content's custom description (the `description` field is also read as a fallback for backwards compatibility).
 * `_amt_keywords` - the content's custom keywords (the `keywords` field is also read as a fallback for backwards compatibility).
 * `_amt_title` - the content's custom title.
 * `_amt_news_keywords` - the content's custom news keywords.
 * `_amt_full_metatags` - the content's full meta tag code.
+
+The following internal custom fields are also used to store user contact info, which is required for full Add-Meta-Tags functionality:
+
+TODO: add contactinfo fields here
 
 = Template Tags =
 
@@ -301,7 +305,7 @@ Please, check if your theme's `header.php` file contains the following required 
 
 The *description* and *keywords* meta tags are most probably already hardcoded into your theme's `header.php` file. Please contact the theme author.
 
-= I paste HTML code in the *Full Meta Tags* box, but it keeps disappearing! =
+= I paste HTML code in the 'Full Meta Tags' box, but it keeps disappearing! =
 
 For security reasons, only `<meta>` HTML elements are allowed in this box.
 
@@ -330,10 +334,12 @@ Screenshots as of v2.3.5
 
 Please check out the changelog of each release by following the links below. You can also check the [roadmap](http://www.codetrax.org/projects/wp-add-meta-tags/roadmap "Add-Meta-Tags Roadmap") regarding future releases of the plugin.
 
+- [2.3.6](http://www.codetrax.org/versions/188)
+ - Updated translations. Temporarily removed Slovak translation (until it is refreshed). Added Turkish translation (thanks Burak).
 - [2.3.5](http://www.codetrax.org/versions/187)
  - Improved metadata on image attachment pages.
  - Support for reading data from external custom fields. Useful when migrating from other plugins or from custom hacks. Please read the *Advanced Customization* section at the plugin homepage for more information and examples.
- - Improved basic metadata for category/tag/author based archives. (thanks Bidstall Admin)
+ - Improved basic metadata for category/tag/author based archives (thanks Bidstall Admin).
  - Improved Dublin Core metadata.
 - [2.3.4](http://www.codetrax.org/versions/186)
 - [2.3.3](http://www.codetrax.org/versions/183)
