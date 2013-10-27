@@ -145,7 +145,7 @@ function amt_options_page() {
                 <label for="site_description">
                     <textarea name="site_description" id="site_description" cols="100" rows="2" class="code">' . esc_attr( stripslashes( $options["site_description"] ) ) . '</textarea>
                     <br />
-                    '.__('Enter a short (150-250 characters long) description of your blog. This text will be used in the <em>description</em> meta tag and the <em>og:description</em> meta property (if Opengraph is enabled) on the <strong>front page</strong>. If this is left empty, then the blog\'s description from the <em>Tagline</em> in <a href="' . get_bloginfo('wpurl') . '/wp-admin/options-general.php">General Options</a> will be used.', 'add-meta-tags').'
+                    '.__('Enter a short (150-250 characters long) description of your blog. This text will be used in the <em>description</em> meta tag and the <em>og:description</em> meta property (if Opengraph is enabled) on the <strong>front page</strong>. If this is left empty, then the blog\'s description from the <em>Tagline</em> in <a href="/wp-admin/options-general.php">General Options</a> will be used.', 'add-meta-tags').'
                 </label>
             </fieldset>
             </td>
@@ -159,7 +159,7 @@ function amt_options_page() {
                 <label for="site_keywords">
                     <textarea name="site_keywords" id="site_keywords" cols="100" rows="2" class="code">' . esc_attr( stripslashes( $options["site_keywords"] ) ) . '</textarea>
                     <br />
-                    '.__('Enter a comma-delimited list of keywords for your blog. These keywords will be used for the <em>keywords</em> meta tag on the <strong>front page</strong>. If this field is left empty, then all of your blog\'s <a href="' . get_bloginfo('wpurl') . '/wp-admin/edit-tags.php?taxonomy=category">categories</a> will be used as keywords for the <em>keywords</em> meta tag.', 'add-meta-tags').'
+                    '.__('Enter a comma-delimited list of keywords for your blog. These keywords will be used for the <em>keywords</em> meta tag on the <strong>front page</strong>. If this field is left empty, then all of your blog\'s <a href="/wp-admin/edit-tags.php?taxonomy=category">categories</a> will be used as keywords for the <em>keywords</em> meta tag.', 'add-meta-tags').'
                     <br />
                     <strong>'.__('Example', 'add-meta-tags').'</strong>: <code>'.__('keyword1, keyword2, keyword3', 'add-meta-tags').'</code>
                 </label>
@@ -198,7 +198,7 @@ function amt_options_page() {
                 <label for="site_wide_meta">
                     <textarea name="site_wide_meta" id="site_wide_meta" cols="100" rows="10" class="code">' . stripslashes( $options["site_wide_meta"] ) . '</textarea>
                     <br />
-                    '.__('Provide the <strong>full XHTML code</strong> of META tags you would like to be included in <strong>all</strong> of your blog pages.', 'add-meta-tags').'
+                    '.__('Provide the full XHTML code of extra META elements you would like to add to all the pages of your web site (read more about the <a href="http://en.wikipedia.org/wiki/Meta_element" target="_blank">META HTML element</a> on Wikipedia).', 'add-meta-tags').'
                     <br />
                     <strong>'.__('Examples', 'add-meta-tags').'</strong>:
                     <br /><code>&lt;meta name="google-site-verification" content="1234567890" /&gt;</code>
@@ -443,10 +443,10 @@ add_action( 'add_meta_boxes', 'amt_add_metadata_box' );
 
 /**
  * Adds a box to the main column of the editing panel of the supported post types.
- * See the amt_get_supported_post_types() docstring for more info on the supported types.
+ * See the amt_get_post_types_for_metabox() docstring for more info on the supported types.
  */
 function amt_add_metadata_box() {
-    $supported_types = amt_get_supported_post_types();
+    $supported_types = amt_get_post_types_for_metabox();
 
     // Add an Add-Meta-Tags meta box to all supported types
     foreach ($supported_types as $supported_type) {
@@ -471,7 +471,7 @@ function amt_add_metadata_box() {
 // add_action('admin_print_styles-post-new.php', 'amt_metadata_box_css_js');
 
 function amt_metadata_box_css_js () {
-    // $supported_types = amt_get_supported_post_types();
+    // $supported_types = amt_get_post_types_for_metabox();
     // See: #900 for details
 
     // Using included Jquery UI
@@ -553,10 +553,10 @@ function amt_inner_metadata_box( $post ) {
 
     print('
         <p>
-            <label for="amt_custom_description">'.__('Description', 'add-meta-tags').':</label>
+            <label for="amt_custom_description"><strong>'.__('Description', 'add-meta-tags').'</strong>:</label>
             <textarea class="code" style="width: 99%" id="amt_custom_description" name="amt_custom_description" cols="30" rows="2" >' . esc_attr( stripslashes( $custom_description_value ) ) . '</textarea>
             <br>
-            ('.__('Enter a custom description of 20-40 words - based on an average word length of 5 characters', 'add-meta-tags').')
+            '.__('Enter a custom description of 20-40 words (based on an average word length of 5 characters).', 'add-meta-tags').'
         </p>
     ');
     // Different notes based on post type
@@ -588,10 +588,10 @@ function amt_inner_metadata_box( $post ) {
     // Alt input:  <input type="text" class="code" style="width: 99%" id="amt_custom_keywords" name="amt_custom_keywords" value="'.$custom_keywords_value.'" />
     print('
         <p>
-            <label for="amt_custom_keywords">'.__('Keywords', 'add-meta-tags').':</label>
+            <label for="amt_custom_keywords"><strong>'.__('Keywords', 'add-meta-tags').'</strong>:</label>
             <textarea class="code" style="width: 99%" id="amt_custom_keywords" name="amt_custom_keywords" cols="30" rows="2" >' . esc_attr( stripslashes( $custom_keywords_value ) ) . '</textarea>
             <br>
-            ('.__('Separate keywords with commas', 'add-meta-tags').')
+            '.__('Enter keywords separated with commas.', 'add-meta-tags').'
         </p>
     ');
     // Different notes based on post type
@@ -626,7 +626,7 @@ function amt_inner_metadata_box( $post ) {
 
     print('
         <p>
-            <label for="amt_custom_title">'.__('Title', 'add-meta-tags').':</label>
+            <label for="amt_custom_title"><strong>'.__('Title', 'add-meta-tags').'</strong>:</label>
             <input type="text" class="code" style="width: 99%" id="amt_custom_title" name="amt_custom_title" value="' . esc_attr( stripslashes( $custom_title_value ) ) . '" />
             <br>
             '.__('Enter a custom title to be used in the <em>title</em> tag. <code>%title%</code> is expanded to the current title.', 'add-meta-tags').'
@@ -640,7 +640,7 @@ function amt_inner_metadata_box( $post ) {
 
     print('
         <p>
-            <label for="amt_custom_newskeywords">'.__('News Keywords', 'add-meta-tags').':</label>
+            <label for="amt_custom_newskeywords"><strong>'.__('News Keywords', 'add-meta-tags').'</strong>:</label>
             <input type="text" class="code" style="width: 99%" id="amt_custom_newskeywords" name="amt_custom_newskeywords" value="' . esc_attr( stripslashes( $custom_newskeywords_value ) ) . '" />
             <br>
             '.__('Enter a comma-delimited list of <strong>news keywords</strong>. For more info about this meta tag, please see this <a target="_blank" href="http://support.google.com/news/publisher/bin/answer.py?hl=en&answer=68297">Google help page</a>.', 'add-meta-tags').'
@@ -654,10 +654,18 @@ function amt_inner_metadata_box( $post ) {
 
     print('
         <p>
-            <label for="amt_custom_full_metatags">'.__('Full meta tags', 'add-meta-tags').':</label>
-            <textarea class="code" style="width: 99%" id="amt_custom_full_metatags" name="amt_custom_full_metatags" cols="30" rows="2" >'. stripslashes( $custom_full_metatags_value ) .'</textarea>
+            <label for="amt_custom_full_metatags"><strong>'.__('Full meta tags', 'add-meta-tags').'</strong>:</label>
+            <textarea class="code" style="width: 99%" id="amt_custom_full_metatags" name="amt_custom_full_metatags" cols="30" rows="4" >'. stripslashes( $custom_full_metatags_value ) .'</textarea>
             <br>
-            '.__('Enter full meta tags specific to this content.', 'add-meta-tags').'
+            '.__('Provide the full XHTML code of extra META elements you would like to add to this content (read more about the <a href="http://en.wikipedia.org/wiki/Meta_element" target="_blank">META HTML element</a> on Wikipedia).', 'add-meta-tags').'
+        </p>
+        <p>
+            '.__('For example, to prevent a cached copy of this content from being available in search engine results, you can add the following metatag:', 'add-meta-tags').'
+            <br /><code>&lt;meta name="robots" content="noarchive" /&gt;</code>
+        </p>
+
+        <p>
+            '.__('Important note: for security reasons only <code>meta</code> elements are allowed in this box. All other HTML elements are automatically removed.', 'add-meta-tags').'
         </p>
     ');
 

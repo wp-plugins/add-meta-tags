@@ -11,6 +11,8 @@
  * for use in wp_kses() function.
  */
 function amt_get_allowed_html_kses() {
+    // Uncomment the following line to allow any HTML element in the Full Meta Tags box.
+    //return array();
     return array(
         'meta' => array(
             'charset' => array(),
@@ -114,13 +116,6 @@ function amt_revert_placeholders( $data ) {
 }
 
 
-function amt_get_content_keywords_mesh( $post ) {
-    // Keywords returned in the form: keyword1;keyword2;keyword3
-    $keywords = explode(', ', amt_get_content_keywords($post));
-    return implode(';', $keywords);
-}
-
-
 /**
  * This function is meant to be used in order to append information about the
  * current page to the description or the title of the content.
@@ -171,7 +166,9 @@ function amt_process_paged( $data ) {
  */
 function amt_get_the_excerpt( $post, $excerpt_max_len=300, $desc_avg_length=250, $desc_min_length=150 ) {
     
-    if ( empty($post->post_excerpt) ) {
+    if ( empty($post->post_excerpt) || get_post_type( $post ) == 'attachment' ) {   // In attachments we always use $post->post_content to get a description
+
+        // Here we generate an excerpt from $post->post_content
 
         // Get the initial data for the excerpt
         $amt_excerpt = strip_tags(substr($post->post_content, 0, $excerpt_max_len));
@@ -204,8 +201,15 @@ function amt_get_the_excerpt( $post, $excerpt_max_len=300, $desc_avg_length=250,
         }
 
     } else {
+
         // When the post excerpt has been set explicitly, then it has priority.
         $amt_excerpt = $post->post_excerpt;
+
+        // NOTE ABOUT ATTACHMENTS: In attachments $post->post_excerpt is the caption.
+        // It is usual that attachments have both the post_excerpt and post_content set.
+        // Attachments should never enter here, but be processed above, so that
+        // post->post_content is always used as the source of the excerpt.
+
     }
 
     /**
@@ -321,9 +325,58 @@ function amt_get_all_categories($no_uncategorized = TRUE) {
 
 
 /**
+ * Returns an array of the category names that appear in the posts of the loop.
+ * Category 'Uncategorized' is excluded.
+ *
+ * Accepts the $category_arr, an array containing the initial categories.
+ */
+function amt_get_categories_from_loop( $category_arr=array() ) {
+    if (have_posts()) {
+        while ( have_posts() ) {
+            the_post(); // Iterate the post index in The Loop. Retrieves the next post, sets up the post, sets the 'in the loop' property to true.
+            $categories = get_the_category();
+            if( $categories ) {
+                foreach( $categories as $category ) {
+                    if ( ! in_array( $category->name, $category_arr ) && $category->slug != 'uncategorized' ) {
+                        $category_arr[] = $category->name;
+                    }
+                }
+            }
+		}
+	}
+    rewind_posts(); // Not sure if this is needed.
+    return $category_arr;
+}
+
+
+/**
+ * Returns an array of the tag names that appear in the posts of the loop.
+ *
+ * Accepts the $tag_arr, an array containing the initial tags.
+ */
+function amt_get_tags_from_loop( $tag_arr=array() ) {
+    if (have_posts()) {
+        while ( have_posts() ) {
+            the_post(); // Iterate the post index in The Loop. Retrieves the next post, sets up the post, sets the 'in the loop' property to true.
+            $tags = get_the_tags();
+            if( $tags ) {
+                foreach( $tags as $tag ) {
+                    if ( ! in_array( $tag->name, $tag_arr ) ) {
+                        $tag_arr[] = $tag->name;
+                    }
+                }
+            }
+		}
+	}
+    rewind_posts(); // Not sure if this is needed.
+    return $tag_arr;
+}
+
+
+/**
  * This is a helper function that returns the post's or page's description.
  *
- * Important: MUST return sanitized data.
+ * Important: MUST return sanitized data, unless this plugin has sanitized the data before storing to db.
  *
  */
 function amt_get_content_description( $post, $auto=true ) {
@@ -352,7 +405,7 @@ function amt_get_content_description( $post, $auto=true ) {
 /**
  * This is a helper function that returns the post's or page's keywords.
  *
- * Important: MUST return sanitized data.
+ * Important: MUST return sanitized data, unless this plugin has sanitized the data before storing to db.
  *
  */
 function amt_get_content_keywords($post, $auto=true) {
@@ -436,6 +489,29 @@ function amt_get_content_keywords($post, $auto=true) {
  *
  *   - post
  *   - page
+ *   - attachment
+ *
+ * And also to ALL public custom post types which have a UI.
+ *
+ */
+function amt_get_supported_post_types() {
+    $supported_builtin_types = array('post', 'page', 'attachment');
+    $public_custom_types = get_post_types( array('public'=>true, '_builtin'=>false, 'show_ui'=>true) );
+    $supported_types = array_merge($supported_builtin_types, $public_custom_types);
+
+    // Allow filtering of the supported content types.
+    $supported_types = apply_filters( 'amt_supported_post_types', $supported_types );
+
+    return $supported_types;
+}
+
+
+/**
+ * Helper function that returns an array containing the post types
+ * on which the Metadata metabox should be added.
+ *
+ *   - post
+ *   - page
  *
  * And also to ALL public custom post types which have a UI.
  *
@@ -443,13 +519,23 @@ function amt_get_content_keywords($post, $auto=true) {
  * The 'attachment' post type does not support saving custom fields like other post types.
  * See: http://www.codetrax.org/issues/875
  */
-function amt_get_supported_post_types() {
-    $supported_builtin_types = array('post', 'page');
+function amt_get_post_types_for_metabox() {
+    // Get the post types supported by Add-Meta-Tags
+    $supported_builtin_types = amt_get_supported_post_types();
+    // The 'attachment' post type does not support saving custom fields like
+    // other post types. See: http://www.codetrax.org/issues/875
+    // So, the 'attachment' type is removed (if exists) so as not to add a metabox there.
+    $attachment_post_type_key = array_search( 'attachment', $supported_builtin_types );
+    if ( $attachment_post_type_key !== false ) {
+        // Remove this type from the array
+        unset( $supported_builtin_types[ $attachment_post_type_key ] );
+    }
+    // Get public post types
     $public_custom_types = get_post_types( array('public'=>true, '_builtin'=>false, 'show_ui'=>true) );
     $supported_types = array_merge($supported_builtin_types, $public_custom_types);
 
     // Allow filtering of the supported content types.
-    $supported_types = apply_filters( 'amt_supported_post_types', $supported_types );
+    $supported_types = apply_filters( 'amt_metabox_post_types', $supported_types );     // Leave this filter out of the documentation for now.
 
     return $supported_types;
 }
@@ -462,29 +548,31 @@ function amt_get_supported_post_types() {
  * For easy migration this function supports reading the description from the
  * old ``description`` custom field and also from the custom field of other plugins.
  */
-function amt_get_post_meta_description($post_id) {
-    $amt_description_field_name = '_amt_description';
+function amt_get_post_meta_description( $post_id ) {
+    // Internal fields - order matters
+    $supported_custom_fields = array( '_amt_description', 'description' );
+    // External fields - Allow filtering
+    $external_fields = array();
+    $external_fields = apply_filters( 'amt_external_description_fields', $external_fields, $post_id );
+    // Merge external fields to our supported custom fields
+    $supported_custom_fields = array_merge( $supported_custom_fields, $external_fields );
 
     // Get an array of all custom fields names of the post
-    $custom_fields = get_post_custom_keys($post_id);
-
-    // Just return an empty string if no custom fields have been associated with this content.
-    if ( empty($custom_fields) ) {
+    $custom_fields = get_post_custom_keys( $post_id );
+    if ( empty( $custom_fields ) ) {
+        // Just return an empty string if no custom fields have been associated with this content.
         return '';
     }
 
-    // First try our default description field
-    if ( in_array($amt_description_field_name, $custom_fields) ) {
-        return get_post_meta($post_id, $amt_description_field_name, true);
+    // Try our fields
+    foreach( $supported_custom_fields as $sup_field ) {
+        // If such a field exists in the db, return its content as the description.
+        if ( in_array( $sup_field, $custom_fields ) ) {
+            return get_post_meta( $post_id, $sup_field, true );
+        }
     }
-    // Try old description field: ``description``
-    elseif ( in_array('description', $custom_fields) ) {
-        return get_post_meta($post_id, 'description', true);
-    }
-    // Try other description field names here.
-    // Support reading from other plugins
 
-    //Return empty string if all fails
+    //Return empty string if all fail
     return '';
 }
 
@@ -497,28 +585,30 @@ function amt_get_post_meta_description($post_id) {
  * old ``keywords`` custom field and also from the custom field of other plugins.
  */
 function amt_get_post_meta_keywords($post_id) {
-    $amt_keywords_field_name = '_amt_keywords';
+    // Internal fields - order matters
+    $supported_custom_fields = array( '_amt_keywords', 'keywords' );
+    // External fields - Allow filtering
+    $external_fields = array();
+    $external_fields = apply_filters( 'amt_external_keywords_fields', $external_fields, $post_id );
+    // Merge external fields to our supported custom fields
+    $supported_custom_fields = array_merge( $supported_custom_fields, $external_fields );
 
     // Get an array of all custom fields names of the post
-    $custom_fields = get_post_custom_keys($post_id);
-
-    // Just return an empty string if no custom fields have been associated with this content.
-    if ( empty($custom_fields) ) {
+    $custom_fields = get_post_custom_keys( $post_id );
+    if ( empty( $custom_fields ) ) {
+        // Just return an empty string if no custom fields have been associated with this content.
         return '';
     }
 
-    // First try our default keywords field
-    if ( in_array($amt_keywords_field_name, $custom_fields) ) {
-        return get_post_meta($post_id, $amt_keywords_field_name, true);
+    // Try our fields
+    foreach( $supported_custom_fields as $sup_field ) {
+        // If such a field exists in the db, return its content as the keywords.
+        if ( in_array( $sup_field, $custom_fields ) ) {
+            return get_post_meta( $post_id, $sup_field, true );
+        }
     }
-    // Try old keywords field: ``keywords``
-    elseif ( in_array('keywords', $custom_fields) ) {
-        return get_post_meta($post_id, 'keywords', true);
-    }
-    // Try other keywords field names here.
-    // Support reading from other plugins
 
-    //Return empty string if all fails
+    //Return empty string if all fail
     return '';
 }
 
@@ -530,25 +620,30 @@ function amt_get_post_meta_keywords($post_id) {
  * No need to migrate from older field name.
  */
 function amt_get_post_meta_title($post_id) {
-    $amt_title_field_name = '_amt_title';
+    // Internal fields - order matters
+    $supported_custom_fields = array( '_amt_title' );
+    // External fields - Allow filtering
+    $external_fields = array();
+    $external_fields = apply_filters( 'amt_external_title_fields', $external_fields, $post_id );
+    // Merge external fields to our supported custom fields
+    $supported_custom_fields = array_merge( $supported_custom_fields, $external_fields );
 
     // Get an array of all custom fields names of the post
-    $custom_fields = get_post_custom_keys($post_id);
-
-    // Just return an empty string if no custom fields have been associated with this content.
-    if ( empty($custom_fields) ) {
+    $custom_fields = get_post_custom_keys( $post_id );
+    if ( empty( $custom_fields ) ) {
+        // Just return an empty string if no custom fields have been associated with this content.
         return '';
     }
 
-    // First try our default title field
-    if ( in_array($amt_title_field_name, $custom_fields) ) {
-        return get_post_meta($post_id, $amt_title_field_name, true);
+    // Try our fields
+    foreach( $supported_custom_fields as $sup_field ) {
+        // If such a field exists in the db, return its content as the custom title.
+        if ( in_array( $sup_field, $custom_fields ) ) {
+            return get_post_meta( $post_id, $sup_field, true );
+        }
     }
-    
-    // Try other title field names here.
-    // Support reading from other plugins
 
-    //Return empty string if all fails
+    //Return empty string if all fail
     return '';
 }
 
@@ -560,25 +655,30 @@ function amt_get_post_meta_title($post_id) {
  * No need to migrate from older field name.
  */
 function amt_get_post_meta_newskeywords($post_id) {
-    $amt_newskeywords_field_name = '_amt_news_keywords';
+    // Internal fields - order matters
+    $supported_custom_fields = array( '_amt_news_keywords' );
+    // External fields - Allow filtering
+    $external_fields = array();
+    $external_fields = apply_filters( 'amt_external_news_keywords_fields', $external_fields, $post_id );
+    // Merge external fields to our supported custom fields
+    $supported_custom_fields = array_merge( $supported_custom_fields, $external_fields );
 
     // Get an array of all custom fields names of the post
-    $custom_fields = get_post_custom_keys($post_id);
-
-    // Just return an empty string if no custom fields have been associated with this content.
-    if ( empty($custom_fields) ) {
+    $custom_fields = get_post_custom_keys( $post_id );
+    if ( empty( $custom_fields ) ) {
+        // Just return an empty string if no custom fields have been associated with this content.
         return '';
     }
 
-    // First try our default 'news_keywords' field
-    if ( in_array($amt_newskeywords_field_name, $custom_fields) ) {
-        return get_post_meta($post_id, $amt_newskeywords_field_name, true);
+    // Try our fields
+    foreach( $supported_custom_fields as $sup_field ) {
+        // If such a field exists in the db, return its content as the news keywords.
+        if ( in_array( $sup_field, $custom_fields ) ) {
+            return get_post_meta( $post_id, $sup_field, true );
+        }
     }
-    
-    // Try other 'news_keywords' field names here.
-    // Support reading from other plugins
 
-    //Return empty string if all fails
+    //Return empty string if all fail
     return '';
 }
 
@@ -590,25 +690,30 @@ function amt_get_post_meta_newskeywords($post_id) {
  * No need to migrate from older field name.
  */
 function amt_get_post_meta_full_metatags($post_id) {
-    $amt_full_metatags_field_name = '_amt_full_metatags';
+    // Internal fields - order matters
+    $supported_custom_fields = array( '_amt_full_metatags' );
+    // External fields - Allow filtering
+    $external_fields = array();
+    $external_fields = apply_filters( 'amt_external_full_metatags_fields', $external_fields, $post_id );
+    // Merge external fields to our supported custom fields
+    $supported_custom_fields = array_merge( $supported_custom_fields, $external_fields );
 
     // Get an array of all custom fields names of the post
-    $custom_fields = get_post_custom_keys($post_id);
-
-    // Just return an empty string if no custom fields have been associated with this content.
-    if ( empty($custom_fields) ) {
+    $custom_fields = get_post_custom_keys( $post_id );
+    if ( empty( $custom_fields ) ) {
+        // Just return an empty string if no custom fields have been associated with this content.
         return '';
     }
 
-    // First try our default 'full_metatags' field
-    if ( in_array($amt_full_metatags_field_name, $custom_fields) ) {
-        return get_post_meta($post_id, $amt_full_metatags_field_name, true);
+    // Try our fields
+    foreach( $supported_custom_fields as $sup_field ) {
+        // If such a field exists in the db, return its content as the full metatags.
+        if ( in_array( $sup_field, $custom_fields ) ) {
+            return get_post_meta( $post_id, $sup_field, true );
+        }
     }
-    
-    // Try other 'full_metatags' field names here.
-    // Support reading from other plugins
 
-    //Return empty string if all fails
+    //Return empty string if all fail
     return '';
 }
 
@@ -719,6 +824,13 @@ function amt_get_video_url() {
         //return 'http://vimeo.com/moogaloop.swf?clip_id=' . $matches[1];
         return 'http://player.vimeo.com/video/' . $matches[1];
     }
+
+    // <video> element
+    //$pattern = '#<video.*src="([^"]+)"#';
+    //if ( preg_match($pattern, $post->post_content, $matches) ) {
+    //    var_dump($matches);
+    //    return 'http://player.vimeo.com/video/' . $matches[1];
+    //}
 
     return '';
 }
