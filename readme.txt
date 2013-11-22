@@ -4,7 +4,7 @@ Donate link: http://bit.ly/HvUakt
 Tags: amt, meta, metadata, seo, optimize, ranking, description, keywords, metatag, schema, opengraph, dublin core, schema.org, microdata, google, twitter cards, google plus, yahoo, bing, search engine optimization, rich snippets, semantic, structured, meta tags
 Requires at least: 3.1.0
 Tested up to: 3.7.1
-Stable tag: 2.4.0
+Stable tag: 2.4.1
 License: Apache License v2
 License URI: http://www.apache.org/licenses/LICENSE-2.0.txt
 
@@ -253,7 +253,7 @@ This can easily be done by hooking custom functions to the `amt_external_descrip
 function read_old_plugin_description_field( $extfields ) {
     // Although $extfields is currently empty, it's a good practice to
     // append your old plugins description field to the $extfields array.
-    array_unshift( 'my_old_plugin_description_field', $extfields );
+    array_unshift( $extfields, 'my_old_plugin_description_field' );
     return $extfields;
 }
 add_filter( 'amt_external_description_fields', 'read_old_plugin_description_field', 10, 1 );
@@ -262,7 +262,7 @@ function read_old_plugin_keywords_field( $extfields, $post_id ) {
     // This function also demonstrates how to get and possibly use the post's ID
     // Append your old plugins keywords field to the $extfields array
     if ( in_array( $post_id, array( 1, 2, 5, 8 ) ) ) {
-        array_unshift( 'my_old_plugin_keywords_field', $extfields );
+        array_unshift( $extfields, 'my_old_plugin_keywords_field' );
     }
     return $extfields;
 }
@@ -388,6 +388,9 @@ Screenshots as of v2.4.0
 
 Please check out the changelog of each release by following the links below. You can also check the [roadmap](http://www.codetrax.org/projects/wp-add-meta-tags/roadmap "Add-Meta-Tags Roadmap") regarding future releases of the plugin.
 
+- [2.4.1](http://www.codetrax.org/versions/198)
+ - Resolved almost all HTML validation issues.
+ - The first page of the category/tag/author archives is always indexed.
 - [2.4.0](http://www.codetrax.org/versions/190)
  - Improved metadata for content and attachments (Opengraph, Dublin Core, Twitter Cards, Schema.org).
  - Metadata generated for all attached local media.

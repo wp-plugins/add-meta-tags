@@ -2,8 +2,8 @@
 /*
 Plugin Name: Add Meta Tags
 Plugin URI: http://www.g-loaded.eu/2006/01/05/add-meta-tags-wordpress-plugin/
-Description: Adds the <em>Description</em> and <em>Keywords</em> XHTML META tags to your blog's <em>front page</em>, posts, pages, category-based archives and tag-based archives. Also adds <em>Opengraph</em> and <em>Dublin Core</em> metadata on posts and pages.
-Version: 2.4.0
+Description: Add basic meta tags and also Opengraph, Schema.org Microdata, Twitter Cards and Dublin Core metadata to optimize your web site for better SEO.
+Version: 2.4.1
 Author: George Notaras
 Author URI: http://www.g-loaded.eu/
 License: Apache License v2
@@ -89,19 +89,19 @@ add_filter( 'plugin_action_links', 'amt_plugin_actions', 10, 2 );
  */
 function amt_custom_title_tag($title) {
 
-    // Get current post object
-    $post = get_queried_object();
-    if ( is_null( $post ) ) {
-        return $title;
-    }
-
-    // Check if metadata is supported on this content type.
-    $post_type = get_post_type( $post );
-    if ( ! in_array( $post_type, amt_get_supported_post_types() ) ) {
-        return $title;
-    }
-
     if ( is_singular() || amt_is_static_front_page() || amt_is_static_home() ) {
+
+        // Get current post object
+        $post = get_queried_object();
+        if ( is_null( $post ) ) {
+            return $title;
+        }
+
+        // Check if metadata is supported on this content type.
+        $post_type = get_post_type( $post );
+        if ( ! in_array( $post_type, amt_get_supported_post_types() ) ) {
+            return $title;
+        }
         
         $custom_title = amt_get_post_meta_title( $post->ID );
         if ( !empty($custom_title) ) {
@@ -134,9 +134,9 @@ function amt_get_metadata_head() {
         if (
             ( is_search() && ($options["noindex_search_results"] == "1") )  ||          // Search results
             ( is_date() && ($options["noindex_date_archives"] == "1") )  ||             // Date and time archives
-            ( is_category() && ($options["noindex_category_archives"] == "1") )  ||     // Category archives
-            ( is_tag() && ($options["noindex_tag_archives"] == "1") )  ||               // Tag archives
-            ( is_author() && ($options["noindex_author_archives"] == "1") )             // Author archives
+            ( is_category() && is_paged() && ($options["noindex_category_archives"] == "1") )  ||     // Category archives (except 1st page)
+            ( is_tag() && is_paged() && ($options["noindex_tag_archives"] == "1") )  ||               // Tag archives (except 1st page)
+            ( is_author() && is_paged() && ($options["noindex_author_archives"] == "1") )             // Author archives (except 1st page)
         ) {
             $metadata_arr[] = '<meta name="robots" content="NOINDEX,FOLLOW" />';
             $do_add_metadata = false;   // No need to process metadata
@@ -153,7 +153,8 @@ function amt_get_metadata_head() {
         if ( ! amt_is_default_front_page() ) {
             $do_add_metadata = false;
         }
-    } else {
+    } elseif ( is_singular() ) {
+        // The post type check should only take place on content pages.
         // Check if metadata should be added to this content type.
         $post_type = get_post_type( $post );
         if ( ! in_array( $post_type, amt_get_supported_post_types() ) ) {
@@ -234,7 +235,8 @@ function amt_get_metadata_footer() {
         if ( ! amt_is_default_front_page() ) {
             $do_add_metadata = false;
         }
-    } else {
+    } elseif ( is_singular() ) {
+        // The post type check should only take place on content pages.
         // Check if metadata should be added to this content type.
         $post_type = get_post_type( $post );
         if ( ! in_array( $post_type, amt_get_supported_post_types() ) ) {
@@ -309,16 +311,19 @@ function amt_get_metadata_review() {
 
 function amt_add_metadata_review($post_body) {
 
-    // Get current post object
-    $post = get_queried_object();
-
-    // Check if metadata is supported on this content type.
-    $post_type = get_post_type( $post );
-    if ( ! in_array( $post_type, amt_get_supported_post_types() ) ) {
-        return $post_body;
-    }
-
     if ( is_singular() ) {
+
+        // Get current post object
+        $post = get_queried_object();
+        if ( is_null( $post ) ) {
+            return $post_body;
+        }
+
+        // Check if metadata is supported on this content type.
+        $post_type = get_post_type( $post );
+        if ( ! in_array( $post_type, amt_get_supported_post_types() ) ) {
+            return $post_body;
+        }
 
         // Check if Review Mode is enabled
         $options = get_option("add_meta_tags_opts");
