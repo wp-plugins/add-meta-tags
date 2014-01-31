@@ -317,7 +317,7 @@ function amt_get_the_excerpt( $post, $excerpt_max_len=300, $desc_avg_length=250,
      * In those cases, $amt_excerpt might only contain ``...``. Here we perform
      * a check for this and return an empty $amt_excerpt.
      */
-    if ($amt_excerpt == "...") {
+    if ( trim($amt_excerpt) == "..." ) {
         $amt_excerpt = "";
     }
 
@@ -541,7 +541,11 @@ function amt_get_content_keywords($post, $auto=true) {
             $content_keywords .= $keyw_fld_content;
 
         // Otherwise, generate the keywords from categories and tags
-        } elseif ( is_single() ) {  // pages do not support categories and tags
+        // Note:
+        // Here we use is_singular(), so that pages are checked for categories and tags.
+        // By default, pages do not support categories and tags, but enabling such
+        // functionality is trivial. See #1206 for more details.
+        } elseif ( is_singular() ) {
             if ($auto) {
                 /*
                  * Add keywords automatically.
