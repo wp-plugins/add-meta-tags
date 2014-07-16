@@ -38,8 +38,6 @@ Donations in the following crypto currencies are also accepted and welcome. Send
 - DarkCoin (DRK): `Xdqg9LVu1pbZEBnNTBuewsnf4cjXU4yoai`
 - LiteCoin (LTC): `LS8UF39LfLahzGo49y736ooRYBVT1zZ2Fa`
 - BlackCoin (BC): `BCjPbumdgyDXKyVBc9GgyfaEL3q8942W1o`
-- X11Coin (XC): `XUREJa9YXaisZrWovRJY5HKHUhuggioAYi`
-- CinniCoin (CINNI): `JYSmV63gAF8EQmETxXPTCAReBq2QjZ1qJx`
 
 Thank you in advance for **donating**!
 
