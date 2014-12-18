@@ -99,6 +99,13 @@ function amt_options_page() {
         <h2>'.__('Message from the author', 'add-meta-tags').'</h2>
         <p style="font-size: 1.2em; padding-left: 2em;"><em>Add-Meta-Tags</em> is released under the terms of the <a href="http://www.apache.org/licenses/LICENSE-2.0.html">Apache License version 2</a> and, therefore, is <strong>free software</strong>.</p>
         <p style="font-size: 1.2em; padding-left: 2em;">However, a significant amount of <strong>time</strong> and <strong>energy</strong> has been put into developing this plugin, so, its production has not been free from cost. If you find this plugin useful and if it has helped your blog get indexed better and rank higher, I would appreciate an <a href="http://bit.ly/HvUakt">extra cup of coffee</a>.</p>
+        <!--
+        <p style="font-size: 1.2em; padding-left: 2em;">Donations in the following crypto currencies are also accepted and welcome. Send coins to the following addresses:</p>
+        <ul style="font-size: 1.2em; padding-left: 2em;">
+            <li style="padding-left: 1em;">- BitCoin (BTC): <code style="font-size: 1.2em;">1KkgpmaBKqQVk643VRhFRkL19Bbci4Mwn9</code></li>
+            <li style="padding-left: 1em;">- LiteCoin (LTC): <code style="font-size: 1.2em;">LS8UF39LfLahzGo49y736ooRYBVT1zZ2Fa</code></li>
+        </ul>
+        -->
         <p style="font-size: 1.2em; padding-left: 2em;">Thank you in advance,<br />George Notaras</p>
         <div style="text-align: right;"><small>'.__('This message can be deactivated in the settings below.', 'add-meta-tags').'</small></div>
     </div>
@@ -106,7 +113,7 @@ function amt_options_page() {
     <div class="wrap">
         <h2>'.__('How it works', 'add-meta-tags').'</h2>
         
-        <p>'.__('Add-Meta-Tags tries to follow the "<em>It just works</em>" principal. By default, the <em>description</em> and <em>keywords</em> meta tags are added to the front page, posts, pages, public custom post types, attachment pages, category, tag and author based archives. Furthermore, it is possible to enable the generation of <em>Opengraph</em>, <em>Dublin Core</em>, <em>Twitter Cards</em> and <em>Schema.org</em> metadata. The plugin also supports some extra SEO related functionality that helps you fine tune your web site.', 'add-meta-tags').'</p>
+        <p>'.__('Add-Meta-Tags tries to follow the "<em>It just works</em>" principal. By default, the <em>description</em> and <em>keywords</em> meta tags are added to the front page, posts, pages, public custom post types, attachment pages, category, tag, custom taxonomy and author based archives. Furthermore, it is possible to enable the generation of <em>Opengraph</em>, <em>Dublin Core</em>, <em>Twitter Cards</em> and <em>Schema.org</em> metadata. The plugin also supports some extra SEO related functionality that helps you fine tune your web site.', 'add-meta-tags').'</p>
         
         <p>'.__('The automatically generated metadata can be further customized for each individual post, page, or any public custom post type directly from the <em>Metadata</em> box inside the post editing panel. If the <em>Metadata</em> box is not visible, you probably need to enable it at the <a href="http://en.support.wordpress.com/screen-options/">Screen Options</a> of the post editing panel.', 'add-meta-tags').'</p>
 
@@ -383,6 +390,12 @@ function amt_options_page() {
                 </label>
                 <br />
 
+                <input id="noindex_taxonomy_archives" type="checkbox" value="1" name="noindex_taxonomy_archives" '. (($options["noindex_taxonomy_archives"]=="1") ? 'checked="checked"' : '') .'" />
+                <label for="noindex_taxonomy_archives">
+                '.__('Custom taxonomy based archives.', 'add-meta-tags').' ('.__('Even if checked, the first page of this type of archive is always indexed.', 'add-meta-tags').')
+                </label>
+                <br />
+
                 <input id="noindex_author_archives" type="checkbox" value="1" name="noindex_author_archives" '. (($options["noindex_author_archives"]=="1") ? 'checked="checked"' : '') .'" />
                 <label for="noindex_author_archives">
                 '.__('Author based archives.', 'add-meta-tags').' ('.__('Even if checked, the first page of this type of archive is always indexed.', 'add-meta-tags').')
@@ -435,7 +448,7 @@ function amt_options_page() {
 
                 <input id="review_mode" type="checkbox" value="1" name="review_mode" '. (($options["review_mode"]=="1") ? 'checked="checked"' : '') .'" />
                 <label for="review_mode">
-                '.__('Enable <em>Metadata Review Mode</em>. When enabled, WordPress users with administrator privileges see a box containing the metadata exactly as it is added in the HTML head. The box is displayed for posts, pages, attachments and custom post types.', 'add-meta-tags').'
+                '.__('Enable <em>Metadata Review Mode</em>. When enabled, WordPress users with administrator privileges see a box (right above the post\'s content) containing the metadata exactly as it is added in the HTML head and body. The box is displayed for posts, pages, attachments and custom post types.', 'add-meta-tags').'
                 </label>
                 <br />
             </fieldset>

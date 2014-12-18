@@ -3,8 +3,8 @@ Contributors: gnotaras
 Donate link: http://bit.ly/HvUakt
 Tags: amt, meta, metadata, seo, optimize, ranking, description, keywords, metatag, schema, opengraph, dublin core, schema.org, microdata, google, twitter cards, google plus, yahoo, bing, search engine optimization, rich snippets, semantic, structured, meta tags
 Requires at least: 3.1.0
-Tested up to: 3.8.1
-Stable tag: 2.4.3
+Tested up to: 4.1
+Stable tag: 2.5.0
 License: Apache License v2
 License URI: http://www.apache.org/licenses/LICENSE-2.0.txt
 
@@ -31,6 +31,11 @@ The goals of the Add-Meta-Tags plugin are:
 *Add-Meta-Tags* is released under the terms of the <a href="http://www.apache.org/licenses/LICENSE-2.0.html">Apache License version 2</a> and, therefore, is **Free software**.
 
 However, a significant amount of **time** and **energy** has been put into developing this plugin, so, its production has not been free from cost. If you find this plugin useful and if it has helped your blog get indexed better and rank higher, you can show your appreciation by making a small <a href="http://bit.ly/HvUakt">donation</a>.
+
+Donations in the following crypto currencies are also accepted and welcome. Send coins to the following addresses:
+
+- BitCoin (BTC): `1KkgpmaBKqQVk643VRhFRkL19Bbci4Mwn9`
+- LiteCoin (LTC): `LS8UF39LfLahzGo49y736ooRYBVT1zZ2Fa`
 
 Thank you in advance for **donating**!
 
@@ -79,6 +84,11 @@ The *description* and *keywords* meta tags are added:
 
 - The description of the tag, if set, is used in the *description* meta tag. If a description does not exist, then a generic one is used.
 - The name of the tag is always used in the *keywords* metatag.
+
+**Custom Taxonomy based Archives**
+
+- The description of the taxonomy term, if set, is used in the *description* meta tag. If a description does not exist, then a generic one is used.
+- The name of the taxonomy term is always used in the *keywords* metatag.
 
 **Author-based Archives**
 
@@ -129,6 +139,8 @@ Schema.org Microdata can be automatically added to the front page, posts, pages,
 
 The plugin automatically marks up posts, pages and custom post types as `Article` objects and also images, videos and audio as `Image`, `Video` and `Audio` MediaObjects respectively. It also considers the web site as an `Organization` object and the author as a `Person` object.
 
+Also, make sure you read Gingerling's guide about <a href="http://community.phplist.com/how-to-enable-google-authorship-rich-snippets-on-your-phplist-community-blog/">how to enable Google Authorship</a> using the Add-Meta-Tags plugin on your WordPress blog (thanks Anna!).
+
 **Twitter Cards**
 
 Twitter Cards can be automatically added to content pages and image attachment pages.
@@ -147,8 +159,7 @@ Dublin Core metatags can be automatically added to posts and pages and attachmen
 
 **Metadata Review Mode**
 
-When enabled, WordPress users with administrator privileges see a box that contains the full metadata (exactly as it is added in the HTML head) above the content for easier examination.
-
+When enabled, WordPress users with administrator privileges see a box (right above the post's content) containing the metadata exactly as it is added in the HTML head and body for easier examination. The box is displayed for posts, pages, attachments and custom post types.
 
 = Metadata for embedded media =
 
@@ -219,6 +230,11 @@ The available filters are:
 1. `amt_external_full_metatags_fields` - applied to the list of external custom fields from which Add-Meta-Tags can read full meta tag HTML code. The hooked function should accept and return 1 argument: an array of field names. The hooked function can also accept the post ID as a second optional argument. Keep in mind that Add-Meta-Tags always saves full meta tag data to its default field, regardless of the field the data was read from.
 1. `amt_embedded_media` - applied to the array in which Add-Meta-Tags stores information about the embedded media. The hooked function should accept and return 1 argument: an array of post types. The hooked function can also accept the post ID as a second optional argument.
 1. `amt_valid_full_metatag_html` - applied to all list of valid HTML elements and attributes that can be used in the 'Full Meta Tags' boxes in the general settings and in the metabox. The hooked function should accept and return 1 argument: an array of valid elements and their attributes. The provided array has the same format as the `$allowed_html` array of the <a href="http://codex.wordpress.org/Function_Reference/wp_kses">wp_kses function</a>.
+1. `amt_image_size_index` - applied to the image size that is used when generating image related meta tags for the front/archive pages. By default, the size `medium` is used. The hooked function should accept and return 1 argument: a string containing either one of the default image sizes (thumbnail, medium, large, full) defined by WordPress or the name of any other user-defined image size.
+1. `amt_image_size_content` - applied to the image size that is used when generating image related meta tags for content pages. By default, the size `medium` is used. The hooked function should accept and return 1 argument: a string containing either one of the default image sizes (thumbnail, medium, large, full) defined by WordPress or the name of any other user-defined image size.
+1. `amt_image_size_attachment` - applied to the image size that is used when generating image related meta tags for attachment pages. By default, the size `large` is used. The hooked function should accept and return 1 argument: a string containing either one of the default image sizes (thumbnail, medium, large, full) defined by WordPress or the name of any other user-defined image size.
+1. `amt_extended_image_tags` - By default, extended image meta tags containing information like the width/height/type are generated for each image. The hooked function should accept and return 1 argument: a boolean object. If the hooked function returns `false` those additional meta tags (width/height/type) are not generated.
+1. `amt_robots_data` - applied to the content of the `robots` meta tag. The hooked function should accept and return 1 argument: a string.
 
 **Example 1**: you want to replace the autogenerated `og:site_name` Opengraph metatag with a custom one.
 
@@ -292,6 +308,48 @@ function extend_full_metatag_valid_elements( $valid_elements ) {
 add_filter( 'amt_valid_full_metatag_html', 'extend_full_metatag_valid_elements', 10, 1 );
 `
 
+**Example 5**: Customize the default image sizes used when generating image related meta tags for front/archive, content and attachment pages.
+
+This can easily be done by hooking custom functions to the `amt_image_size_index`, `amt_image_size_content`, `amt_image_size_attachment` filters:
+
+Here we customize the generation of all image related meta tag, so that the `full` image size is used. Since the same image size is used for all types of pages, a single function is hooked to all filters.
+
+`
+function amt_use_full_image_size_in_all_meta_tags( $size ) {
+    return 'full';
+}
+add_filter( 'amt_image_size_index', 'amt_use_full_image_size_in_all_meta_tags', 10, 1 );
+add_filter( 'amt_image_size_content', 'amt_use_full_image_size_in_all_meta_tags', 10, 1 );
+add_filter( 'amt_image_size_attachment', 'amt_use_full_image_size_in_all_meta_tags', 10, 1 );
+`
+This code can be placed inside your theme's `functions.php` file.
+
+**Example 6**: Add the `fb:admins` and the `fb:app_id` OpenGraph meta tags.
+
+This can easily be done by hooking a custom function to the `amt_opengraph_metadata_head` filter:
+
+`
+function amt_extend_og_metatags( $metatags ) {
+    $metatags[] = '<meta property="fb:admins" content="ENTER_USER_ID_HERE" />';
+    $metatags[] = '<meta property="fb:app_id" content="ENTER_APPID_HERE" />';
+    return $metatags;
+}
+add_filter( 'amt_opengraph_metadata_head', 'amt_extend_og_metatags', 10, 1 );
+`
+This code can be placed inside your theme's `functions.php` file.
+
+**Example 7**: Generate compact image meta tags (meta tags for width/height/type are suppressed).
+
+This can easily be done by hooking a custom function to the `amt_extended_image_tags` filter:
+
+`
+function amt_generate_extended_image_tags( $default ) {
+    return false;
+}
+add_filter( 'amt_extended_image_tags', 'amt_generate_extended_image_tags', 10, 1 );
+`
+This code can be placed inside your theme's `functions.php` file.
+
 
 = Custom Fields =
 
@@ -303,9 +361,15 @@ Add-Meta-Tags uses the following internal custom fields to store data related to
 * `_amt_news_keywords` - the content's custom news keywords.
 * `_amt_full_metatags` - the content's full meta tag code.
 
-The following internal custom fields are also used to store user contact info, which is required for full Add-Meta-Tags functionality:
+The contact methods added by Add-Meta-Tags are:
 
-TODO: add contactinfo fields here
+* `amt_facebook_author_profile_url` as *Facebook author profile URL (AMT)*
+* `amt_facebook_publisher_profile_url` as *Facebook publisher profile URL (AMT)*
+* `amt_googleplus_author_profile_url` as *Google+ author profile URL (AMT)*
+* `amt_googleplus_publisher_profile_url` as *Google+ publisher page URL (AMT)*
+* `amt_twitter_author_username` as *Twitter author username (AMT)*
+* `amt_twitter_publisher_username` as *Twitter publisher username (AMT)*
+
 
 = Template Tags =
 
@@ -390,6 +454,13 @@ Screenshots as of v2.4.0
 
 Please check out the changelog of each release by following the links below. You can also check the [roadmap](http://www.codetrax.org/projects/wp-add-meta-tags/roadmap "Add-Meta-Tags Roadmap") regarding future releases of the plugin.
 
+- [2.5.0](http://www.codetrax.org/versions/226)
+ - Generate metadata for custom taxonomies.
+ - Configurable default image size used in meta tags.
+ - Add filter for compact image meta tags (without size/type tags).
+ - Allow filtering of the robots meta tag.
+ - Add artwork to the plugin page on WordPress.org.
+ - Various minor fixes and additions.
 - [2.4.3](http://www.codetrax.org/versions/216)
  - Updated translations.
 - [2.4.2](http://www.codetrax.org/versions/215)

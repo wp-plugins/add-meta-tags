@@ -3,7 +3,7 @@
 Plugin Name: Add Meta Tags
 Plugin URI: http://www.g-loaded.eu/2006/01/05/add-meta-tags-wordpress-plugin/
 Description: Add basic meta tags and also Opengraph, Schema.org Microdata, Twitter Cards and Dublin Core metadata to optimize your web site for better SEO.
-Version: 2.4.3
+Version: 2.5.0
 Author: George Notaras
 Author URI: http://www.g-loaded.eu/
 License: Apache License v2
@@ -129,6 +129,10 @@ function amt_get_metadata_head() {
 
     $metadata_arr = array();
 
+
+    // Robots Meta Tag content.
+    $robots_content = '';
+
     // Check for NOINDEX,FOLLOW on archives.
     // There is no need to further process metadata as we explicitly ask search
     // engines not to index the content.
@@ -138,12 +142,21 @@ function amt_get_metadata_head() {
             ( is_date() && ($options["noindex_date_archives"] == "1") )  ||             // Date and time archives
             ( is_category() && is_paged() && ($options["noindex_category_archives"] == "1") )  ||     // Category archives (except 1st page)
             ( is_tag() && is_paged() && ($options["noindex_tag_archives"] == "1") )  ||               // Tag archives (except 1st page)
+            ( is_tax() && is_paged() && ($options["noindex_taxonomy_archives"] == "1") )  ||          // Custom taxonomy archives (except 1st page)
             ( is_author() && is_paged() && ($options["noindex_author_archives"] == "1") )             // Author archives (except 1st page)
         ) {
-            $metadata_arr[] = '<meta name="robots" content="NOINDEX,FOLLOW" />';
             $do_add_metadata = false;   // No need to process metadata
+            $robots_content = 'NOINDEX,FOLLOW';
+            // Allow filtering of the robots meta tag content.
+            // Dev Note: Filtering of the robots meta tag takes place here, so as to avoid double filtering in case $do_add_metadata is true.
+            $robots_content = apply_filters( 'amt_robots_data', $robots_content );
         }
     }
+    // Add a robots meta tag if its content is not empty.
+    if ( ! empty( $robots_content ) ) {
+        $metadata_arr[] = '<meta name="robots" content="' . $robots_content . '" />';
+    }
+
 
     // Get current post object
     $post = get_queried_object();

@@ -57,9 +57,19 @@ function amt_add_basic_metadata_head( $post, $attachments, $embedded_media, $opt
     // Array to store metadata
     $metadata_arr = array();
 
-    // Add NOODP on posts and pages
+
+    // Robots Meta Tag.
+    $robots_content = '';
+
     if ( $do_noodp_description && ( is_front_page() || is_singular() ) ) {
-        $metadata_arr[] = '<meta name="robots" content="NOODP,NOYDIR" />';
+        // Add NOODP on posts and pages
+        $robots_content = 'NOODP,NOYDIR';
+        // Allow filtering of the robots meta tag content.
+        $robots_content = apply_filters( 'amt_robots_data', $robots_content );
+    }
+    // Add a robots meta tag if its content is not empty.
+    if ( ! empty( $robots_content ) ) {
+        $metadata_arr[] = '<meta name="robots" content="' . $robots_content . '" />';
     }
 
 
@@ -207,6 +217,35 @@ function amt_add_basic_metadata_head( $post, $attachments, $embedded_media, $opt
             $cur_tag_name = sanitize_text_field( amt_sanitize_keywords( single_tag_title($prefix = '', $display = false ) ) );
             if ( ! empty($cur_tag_name) ) {
                 $metadata_arr[] = '<meta name="keywords" content="' . esc_attr( $cur_tag_name ) . '" />';
+            }
+        }
+
+    // Custom taxonomies - Should be after is_category() and is_tag(), as it would catch those taxonomies as well.
+    } elseif ( is_tax() ) {
+
+        // Taxonomy term object.
+        // When viewing taxonomy archives, the $post object is the taxonomy term object. Check with: var_dump($post);
+        $tax_term_object = $post;
+
+        if ($do_description) {
+            // If set, the description of the custom taxonomy term is used in the 'description' metatag.
+            // Otherwise, a generic description is used.
+            // Here we sanitize the provided description for safety
+            $description_content = sanitize_text_field( amt_sanitize_description( term_description( $tax_term_object->term_id ) ) );
+            // Note: Contains multipage information through amt_process_paged()
+            if ( empty( $description_content ) ) {
+                $metadata_arr[] = '<meta name="description" content="' . esc_attr( amt_process_paged( 'Content classified under the ' . single_tag_title( $prefix='', $display=false ) . ' taxonomy.' ) ) . '" />';
+            } else {
+                $metadata_arr[] = '<meta name="description" content="' . esc_attr( amt_process_paged( $description_content ) ) . '" />';
+            }
+        }
+        
+        if ($do_keywords) {
+            // The taxonomy term name alone is included in the 'keywords' metatag.
+            // Here we sanitize the provided keywords for safety.
+            $cur_tax_term_name = sanitize_text_field( amt_sanitize_keywords( single_tag_title($prefix = '', $display = false ) ) );
+            if ( ! empty($cur_tax_term_name) ) {
+                $metadata_arr[] = '<meta name="keywords" content="' . esc_attr( $cur_tax_term_name ) . '" />';
             }
         }
 

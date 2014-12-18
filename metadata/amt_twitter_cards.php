@@ -95,7 +95,9 @@ function amt_add_twitter_cards_metadata_head( $post, $attachments, $embedded_med
             // Image attachments
             //$image_meta = wp_get_attachment_metadata( $post->ID );   // contains info about all sizes
             // We use wp_get_attachment_image_src() since it constructs the URLs
-            $main_size_meta = wp_get_attachment_image_src( $post->ID , 'large' );
+            // Allow filtering of the image size.
+            $image_size = apply_filters( 'amt_image_size_attachment', 'large' );
+            $main_size_meta = wp_get_attachment_image_src( $post->ID , $image_size );
 
             // Type
             $metadata_arr[] = '<meta property="twitter:card" content="photo" />';
@@ -110,8 +112,10 @@ function amt_add_twitter_cards_metadata_head( $post, $attachments, $embedded_med
             }
             // Image
             $metadata_arr[] = '<meta property="twitter:image" content="' . esc_url_raw( $main_size_meta[0] ) . '" />';
-            $metadata_arr[] = '<meta property="twitter:image:width" content="' . esc_attr( $main_size_meta[1] ) . '" />';
-            $metadata_arr[] = '<meta property="twitter:image:height" content="' . esc_attr( $main_size_meta[2] ) . '" />';
+            if ( apply_filters( 'amt_extended_image_tags', true ) ) {
+                $metadata_arr[] = '<meta property="twitter:image:width" content="' . esc_attr( $main_size_meta[1] ) . '" />';
+                $metadata_arr[] = '<meta property="twitter:image:height" content="' . esc_attr( $main_size_meta[2] ) . '" />';
+            }
 
         } elseif ( 'video' == $attachment_type ) {
             // No player card for local video.
@@ -134,11 +138,13 @@ function amt_add_twitter_cards_metadata_head( $post, $attachments, $embedded_med
         if ( get_post_format($post->ID) === false ) {
             $metadata_arr[] = '<meta property="twitter:card" content="summary" />';
             // Set the image size to use
-            $image_size = 'medium';
+            $image_size = apply_filters( 'amt_image_size_content', 'medium' );
         } else {
             $metadata_arr[] = '<meta property="twitter:card" content="summary_large_image" />';
             // Set the image size to use
-            $image_size = 'large';
+            // Since we need a bigger image, here we filter the image size through 'amt_image_size_attachment',
+            // which typically returns a size bigger than 'amt_image_size_content'.
+            $image_size = apply_filters( 'amt_image_size_attachment', 'large' );
         }
 
         // Author and Publisher
@@ -165,8 +171,10 @@ function amt_add_twitter_cards_metadata_head( $post, $attachments, $embedded_med
 
             $main_size_meta = wp_get_attachment_image_src( get_post_thumbnail_id($post->ID), $image_size );
             $metadata_arr[] = '<meta property="twitter:image:src" content="' . esc_url_raw( $main_size_meta[0] ) . '" />';
-            $metadata_arr[] = '<meta property="twitter:image:width" content="' . esc_attr( $main_size_meta[1] ) . '" />';
-            $metadata_arr[] = '<meta property="twitter:image:height" content="' . esc_attr( $main_size_meta[2] ) . '" />';
+            if ( apply_filters( 'amt_extended_image_tags', true ) ) {
+                $metadata_arr[] = '<meta property="twitter:image:width" content="' . esc_attr( $main_size_meta[1] ) . '" />';
+                $metadata_arr[] = '<meta property="twitter:image:height" content="' . esc_attr( $main_size_meta[2] ) . '" />';
+            }
 
             // Images have been found.
             $image_metatags_added = true;
@@ -189,8 +197,10 @@ function amt_add_twitter_cards_metadata_head( $post, $attachments, $embedded_med
                     // Image tags
                     $main_size_meta = wp_get_attachment_image_src( $attachment->ID, $image_size );
                     $metadata_arr[] = '<meta property="twitter:image:src" content="' . esc_url_raw( $main_size_meta[0] ) . '" />';
-                    $metadata_arr[] = '<meta property="twitter:image:width" content="' . esc_attr( $main_size_meta[1] ) . '" />';
-                    $metadata_arr[] = '<meta property="twitter:image:height" content="' . esc_attr( $main_size_meta[2] ) . '" />';
+                    if ( apply_filters( 'amt_extended_image_tags', true ) ) {
+                        $metadata_arr[] = '<meta property="twitter:image:width" content="' . esc_attr( $main_size_meta[1] ) . '" />';
+                        $metadata_arr[] = '<meta property="twitter:image:height" content="' . esc_attr( $main_size_meta[2] ) . '" />';
+                    }
 
                     // Images have been found.
                     $image_metatags_added = true;
@@ -209,12 +219,16 @@ function amt_add_twitter_cards_metadata_head( $post, $attachments, $embedded_med
 
                 if ( get_post_format($post->ID) === false ) {
                     $metadata_arr[] = '<meta property="twitter:image:src" content="' . esc_url_raw( $embedded_item['thumbnail'] ) . '" />';
-                    $metadata_arr[] = '<meta property="twitter:image:width" content="150" />';
-                    $metadata_arr[] = '<meta property="twitter:image:height" content="150" />';
+                    if ( apply_filters( 'amt_extended_image_tags', true ) ) {
+                        $metadata_arr[] = '<meta property="twitter:image:width" content="150" />';
+                        $metadata_arr[] = '<meta property="twitter:image:height" content="150" />';
+                    }
                 } else {
                     $metadata_arr[] = '<meta property="twitter:image:src" content="' . esc_url_raw( $embedded_item['image'] ) . '" />';
-                    $metadata_arr[] = '<meta property="twitter:image:width" content="' . esc_attr( $embedded_item['width'] ) . '" />';
-                    $metadata_arr[] = '<meta property="twitter:image:height" content="' . esc_attr( $embedded_item['height'] ) . '" />';
+                    if ( apply_filters( 'amt_extended_image_tags', true ) ) {
+                        $metadata_arr[] = '<meta property="twitter:image:width" content="' . esc_attr( $embedded_item['width'] ) . '" />';
+                        $metadata_arr[] = '<meta property="twitter:image:height" content="' . esc_attr( $embedded_item['height'] ) . '" />';
+                    }
                 }
 
                 // Images have been found.
@@ -264,7 +278,9 @@ function amt_add_twitter_cards_metadata_head( $post, $attachments, $embedded_med
 
             if ( 'image' == $attachment_type ) {
                 // Image tags
-                $main_size_meta = wp_get_attachment_image_src( $attachment->ID, 'medium' );
+                // Allow filtering of the image size.
+                $image_size = apply_filters( 'amt_image_size_content', 'medium' );
+                $main_size_meta = wp_get_attachment_image_src( $attachment->ID, $image_size );
                 $metadata_arr[] = '<meta property="twitter:image' . $k . '" content="' . esc_url_raw( $main_size_meta[0] ) . '" />';
 
                 // Increment the counter
