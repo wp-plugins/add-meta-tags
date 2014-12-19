@@ -4,7 +4,7 @@ Donate link: http://bit.ly/HvUakt
 Tags: amt, meta, metadata, seo, optimize, ranking, description, keywords, metatag, schema, opengraph, dublin core, schema.org, microdata, google, twitter cards, google plus, yahoo, bing, search engine optimization, rich snippets, semantic, structured, meta tags
 Requires at least: 3.1.0
 Tested up to: 4.2
-Stable tag: 2.5.1
+Stable tag: 2.5.2
 License: Apache License v2
 License URI: http://www.apache.org/licenses/LICENSE-2.0.txt
 
@@ -121,6 +121,10 @@ For more info about the *news_keywords* metatag, please read this <a target="_bl
 
 It is possible to assign custom full meta tags to single posts (posts, pages, custom post types).
 
+**Per post referenced items**
+
+It is possible to enter URLs of referenced items in each single post (posts, pages, custom post types), which results in the generation of the relevant `og:referenced` (OpenGraph) and `referencedItem` (Schema.org) meta tags.
+
 **Copyright Metatag**
 
 It is possible to add a head link to a user-defined copyright page.
@@ -228,6 +232,7 @@ The available filters are:
 1. `amt_external_title_fields` - applied to the list of external custom fields from which Add-Meta-Tags can read data for the title metatag. The hooked function should accept and return 1 argument: an array of field names. The hooked function can also accept the post ID as a second optional argument. Keep in mind that Add-Meta-Tags always saves title data to its default field, regardless of the field the data was read from.
 1. `amt_external_news_keywords_fields` - applied to the list of external custom fields from which Add-Meta-Tags can read data for the news_keywords metatag. The hooked function should accept and return 1 argument: an array of field names. The hooked function can also accept the post ID as a second optional argument. Keep in mind that Add-Meta-Tags always saves news_keywords data to its default field, regardless of the field the data was read from.
 1. `amt_external_full_metatags_fields` - applied to the list of external custom fields from which Add-Meta-Tags can read full meta tag HTML code. The hooked function should accept and return 1 argument: an array of field names. The hooked function can also accept the post ID as a second optional argument. Keep in mind that Add-Meta-Tags always saves full meta tag data to its default field, regardless of the field the data was read from.
+1. `amt_external_referenced_list_fields` - applied to the list of external custom fields from which Add-Meta-Tags can read lists of URLs of referenced items. The hooked function should accept and return 1 argument: an array of field names. The hooked function can also accept the post ID as a second optional argument. Keep in mind that Add-Meta-Tags always saves URL lists of referenced items to its default field, regardless of the field the data was read from.
 1. `amt_embedded_media` - applied to the array in which Add-Meta-Tags stores information about the embedded media. The hooked function should accept and return 1 argument: an array of post types. The hooked function can also accept the post ID as a second optional argument.
 1. `amt_valid_full_metatag_html` - applied to all list of valid HTML elements and attributes that can be used in the 'Full Meta Tags' boxes in the general settings and in the metabox. The hooked function should accept and return 1 argument: an array of valid elements and their attributes. The provided array has the same format as the `$allowed_html` array of the <a href="http://codex.wordpress.org/Function_Reference/wp_kses">wp_kses function</a>.
 1. `amt_image_size_index` - applied to the image size that is used when generating image related meta tags for the front/archive pages. By default, the size `medium` is used. The hooked function should accept and return 1 argument: a string containing either one of the default image sizes (thumbnail, medium, large, full) defined by WordPress or the name of any other user-defined image size.
@@ -237,7 +242,7 @@ The available filters are:
 1. `amt_robots_data` - applied to the content of the `robots` meta tag. The hooked function should accept and return 1 argument: a string.
 1. `amt_generic_description_category_archive` - applied to the generic description that is used in category archives, in case a custom description has not been set for the category. The hooked function should accept and return 1 argument: a string that contains exactly one `%s` placeholder, which will be replaced by the category name. Default string: `Content filed under the %s category.`
 1. `amt_generic_description_tag_archive` - applied to the generic description that is used in tag archives, in case a custom description has not been set for the tag. The hooked function should accept and return 1 argument: a string that contains exactly one `%s` placeholder, which will be replaced by the tag name. Default string: `Content tagged with %s.`
-1. `amt_generic_description_taxonomy_archive` - applied to the generic description that is used in custom taxonomy archives, in case a custom description has not been set for the taxonomy term. The hooked function should accept and return 1 argument: a string that contains exactly one `%s` placeholder, which will be replaced by the taxonomy term name. Default string: `Content filed under the %s taxonomy.`
+1. `amt_generic_description_TAXONOMYSLUG_archive` - applied to the generic description that is used in the archive of the term which belongs to the taxonomy with slug `TAXONOMYSLUG`, in case a custom description has not been set for the term. The hooked function should accept and return 1 argument: a string that contains exactly one `%s` placeholder, which will be replaced by the taxonomy term name. Default string: `Content filed under the %s taxonomy.`
 1. `amt_generic_description_author_archive` - applied to the generic description that is used in author archives, in case a custom description has not been set for the author. The hooked function should accept and return 1 argument: a string that contains exactly one `%s` placeholder, which will be replaced by the author's display name. Default string: `Content published by %s.`
 1. `amt_custom_title` - applied to the custom title, if a custom title has been set in the post editing panel, otherwise it is not processed. The hooked function should accept and return 1 argument: a string.
 
@@ -370,10 +375,10 @@ function amt_custom_tag_archive_description( $default ) {
 }
 add_filter( 'amt_generic_description_tag_archive', 'amt_custom_tag_archive_description', 10, 1 );
 
-function amt_custom_taxonomy_archive_description( $default ) {
+function amt_custom_mytaxonomyslug_archive_description( $default ) {
     return 'Members of the %s group.';
 }
-add_filter( 'amt_generic_description_taxonomy_archive', 'amt_custom_taxonomy_archive_description', 10, 1 );
+add_filter( 'amt_generic_description_mytaxonomyslug_archive', 'amt_custom_mytaxonomyslug_archive_description', 10, 1 );
 
 function amt_custom_author_archive_description( $default ) {
     return 'Projects started by %s.';
@@ -404,6 +409,7 @@ Add-Meta-Tags uses the following internal custom fields to store data related to
 * `_amt_title` - the content's custom title.
 * `_amt_news_keywords` - the content's custom news keywords.
 * `_amt_full_metatags` - the content's full meta tag code.
+* `_amt_referenced_list` - list of URLs of items referenced in the post.
 
 The contact methods added by Add-Meta-Tags are:
 
@@ -498,6 +504,10 @@ Screenshots as of v2.4.0
 
 Please check out the changelog of each release by following the links below. You can also check the [roadmap](http://www.codetrax.org/projects/wp-add-meta-tags/roadmap "Add-Meta-Tags Roadmap") regarding future releases of the plugin.
 
+- [2.5.2](http://www.codetrax.org/versions/222)
+ - Added support for referenced items (OpenGraph ``og:referenced`` and Schema.org ``referencedItem`` meta tags). A new box has been added in the ``Metadata`` metabox in the post editing screen, in which the canonical URLs of the referenced items can be added.
+ - Print multiple article sections (as many as the post's categories) in OpenGraph and Schema.org metadata.
+ - Improved filtering of the generic description of custom taxonomies via dynamic filter.
 - [2.5.1](http://www.codetrax.org/versions/221)
  - Allow filtering the generic descriptions in category, tag, custom taxonomy and author archives.
  - Add a filter to further customize the custom title programmatically.

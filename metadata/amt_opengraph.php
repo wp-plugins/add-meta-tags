@@ -492,10 +492,19 @@ function amt_add_opengraph_metadata_head( $post, $attachments, $embedded_media, 
             $metadata_arr[] = '<meta property="article:publisher" content="' . esc_url_raw( trailingslashit( get_bloginfo('url') ) ) . '" />';
         }
 
+        /*
         // article:section: We use the first category as the section.
         $first_cat = amt_get_first_category($post);
         if ( ! empty( $first_cat ) ) {
             $metadata_arr[] = '<meta property="article:section" content="' . esc_attr( $first_cat ) . '" />';
+        }
+        */
+        // article:section: We use print an ``article:section`` meta tag for each of the post's categories.
+        foreach( get_the_category($post->ID) as $cat ) {
+            $section = trim( $cat->cat_name );
+            if ( ! empty( $section ) ) {
+                $metadata_arr[] = '<meta property="article:section" content="' . esc_attr( $section ) . '" />';
+            }
         }
         
         // article:tag: Keywords are listed as post tags
@@ -504,6 +513,15 @@ function amt_add_opengraph_metadata_head( $post, $attachments, $embedded_media, 
             $tag = trim( $tag );
             if (!empty($tag)) {
                 $metadata_arr[] = '<meta property="article:tag" content="' . esc_attr( $tag ) . '" />';
+            }
+        }
+
+        // og:referenced
+        $referenced_url_list = amt_get_referenced_items($post);
+        foreach ($referenced_url_list as $referenced_url) {
+            $referenced_url = trim($referenced_url);
+            if ( ! empty( $referenced_url ) ) {
+                $metadata_arr[] = '<meta property="og:referenced" content="' . esc_url_raw( $referenced_url ) . '" />';
             }
         }
 

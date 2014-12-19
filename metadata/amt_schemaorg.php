@@ -374,10 +374,18 @@ function amt_add_schemaorg_metadata_content_filter( $post_body ) {
             $metadata_arr[] = '<meta itemprop="description" content="' . esc_attr( amt_process_paged( $content_desc ) ) . '" />';
         }
 
+        /*
         // Section: We use the first category as the section
         $first_cat = sanitize_text_field( amt_sanitize_keywords( amt_get_first_category($post) ) );
         if (!empty($first_cat)) {
             $metadata_arr[] = '<meta itemprop="articleSection" content="' . esc_attr( $first_cat ) . '" />';
+        }
+        */
+        foreach( get_the_category($post->ID) as $cat ) {
+            $section = trim( $cat->cat_name );
+            if ( ! empty( $section ) ) {
+                $metadata_arr[] = '<meta itemprop="articleSection" content="' . esc_attr( $section ) . '" />';
+            }
         }
 
         // Keywords - We use the keywords defined by Add-Meta-Tags
@@ -390,6 +398,15 @@ function amt_add_schemaorg_metadata_content_filter( $post_body ) {
         if ( function_exists('has_post_thumbnail') && has_post_thumbnail($post->ID) ) {
             $thumbnail_info = wp_get_attachment_image_src( get_post_thumbnail_id($post->ID), 'thumbnail' );
             $metadata_arr[] = '<meta itemprop="thumbnailUrl" content="' . esc_url_raw( $thumbnail_info[0] ) . '" />';
+        }
+
+        // Referenced Items
+        $referenced_url_list = amt_get_referenced_items($post);
+        foreach ($referenced_url_list as $referenced_url) {
+            $referenced_url = trim($referenced_url);
+            if ( ! empty( $referenced_url ) ) {
+                $metadata_arr[] = '<meta itemprop="referencedItem" content="' . esc_url_raw( $referenced_url ) . '" />';
+            }
         }
 
 
