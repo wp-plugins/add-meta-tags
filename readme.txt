@@ -560,6 +560,7 @@ Please check out the changelog of each release by following the links below. You
  - Added `amt_metadata_metabox_permissions` filter, which can be used to customize the permissions that control whether the `Metadata` metabox as a whole or each individual box is displayed in the post, page and custom post type's editing screen depending on the user's capabilities. See Example 10 in the plugin description page for the details.
  - Customizable video player size information in Twitter Player Cards (`amt_twitter_cards_video_player_size` filter).
  - The automatically generated `keywords` meta tag now also includes the terms of all public non-builtin taxonomies.
+ - Updated translations.
 - [2.5.3](http://www.codetrax.org/versions/199)
  - Clearly marked the referenced items functionality as experimental.
  - Re-arrange OpenGraph metadata.
