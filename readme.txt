@@ -410,21 +410,21 @@ function amt_custom_metadata_metabox_permissions( $default_permissions ) {
 
     //
     // This array contains the default Metadata metabox permission settings.
-    // Regardless of these settings the `edit_posts` capability is _always_
-    // checked when reading/writing metabox data, so the `edit_posts` capability
+    // Regardless of these settings the 'edit_posts' capability is _always_
+    // checked when reading/writing metabox data, so the 'edit_posts' capability
     // should be considered as the least restrictive capability that can be used.
     // The available Capabilities vs Roles table can be found here:
     //     http://codex.wordpress.org/Roles_and_Capabilities
-    // To disable a box, simply add a very restrictive capability like `create_users`.
+    // To disable a box, simply add a very restrictive capability like 'create_users'.
     //
     $permissions = array(
         // Minimum capability for the metabox to appear in the editing
         // screen of the supported post types.
         'global_metabox_capability' => 'edit_posts',
         // The following permissions have an effect only if they are stricter
-        // than the permission of the `global_metabox_capability` setting.
+        // than the permission of the 'global_metabox_capability' setting.
         // Edit these, only if you want to further restrict access to
-        // specific boxes, for example the `full metatags` box.
+        // specific boxes, for example the 'full metatags' box.
         'description_box_capability' => 'edit_posts',
         'keywords_box_capability' => 'edit_posts',
         'title_box_capability' => 'edit_posts',
