@@ -4,7 +4,7 @@ Donate link: http://bit.ly/HvUakt
 Tags: amt, meta, metadata, seo, optimize, ranking, description, keywords, metatag, schema, opengraph, dublin core, schema.org, microdata, google, twitter cards, google plus, yahoo, bing, search engine optimization, rich snippets, semantic, structured, meta tags
 Requires at least: 3.1.0
 Tested up to: 4.2
-Stable tag: 2.5.4
+Stable tag: 2.5.5
 License: Apache License v2
 License URI: http://www.apache.org/licenses/LICENSE-2.0.txt
 
@@ -362,9 +362,9 @@ add_filter( 'amt_extended_image_tags', 'amt_generate_extended_image_tags', 10, 1
 `
 This code can be placed inside your theme's `functions.php` file.
 
-**Example 8**: Customize the gteneric descriptions in the category, tag and custom taxonomy archives.
+**Example 8**: Customize the generic descriptions in the category, tag, custom taxonomy and author archives.
 
-This can easily be done by hooking custom functions to the `amt_generic_description_category_archive`, `amt_generic_description_tag_archive` and `amt_generic_description_taxonomy_archive` filters:
+This can easily be done by hooking custom functions to the `amt_generic_description_category_archive`, `amt_generic_description_tag_archive`, `amt_generic_description_taxonomy_archive` and `amt_generic_description_author_archive` filters:
 
 `
 function amt_custom_category_archive_description( $default ) {
@@ -410,21 +410,21 @@ function amt_custom_metadata_metabox_permissions( $default_permissions ) {
 
     //
     // This array contains the default Metadata metabox permission settings.
-    // Regardless of these settings the `edit_posts` capability is _always_
-    // checked when reading/writing metabox data, so the `edit_posts` capability
+    // Regardless of these settings the 'edit_posts' capability is _always_
+    // checked when reading/writing metabox data, so the 'edit_posts' capability
     // should be considered as the least restrictive capability that can be used.
     // The available Capabilities vs Roles table can be found here:
     //     http://codex.wordpress.org/Roles_and_Capabilities
-    // To disable a box, simply add a very restrictive capability like `create_users`.
+    // To disable a box, simply add a very restrictive capability like 'create_users'.
     //
     $permissions = array(
         // Minimum capability for the metabox to appear in the editing
         // screen of the supported post types.
         'global_metabox_capability' => 'edit_posts',
         // The following permissions have an effect only if they are stricter
-        // than the permission of the `global_metabox_capability` setting.
+        // than the permission of the 'global_metabox_capability' setting.
         // Edit these, only if you want to further restrict access to
-        // specific boxes, for example the `full metatags` box.
+        // specific boxes, for example the 'full metatags' box.
         'description_box_capability' => 'edit_posts',
         'keywords_box_capability' => 'edit_posts',
         'title_box_capability' => 'edit_posts',
@@ -556,10 +556,12 @@ Screenshots as of v2.4.0
 
 Please check out the changelog of each release by following the links below. You can also check the [roadmap](http://www.codetrax.org/projects/wp-add-meta-tags/roadmap "Add-Meta-Tags Roadmap") regarding future releases of the plugin.
 
+- [2.5.5](http://www.codetrax.org/versions/232)
 - [2.5.4](http://www.codetrax.org/versions/191)
  - Added `amt_metadata_metabox_permissions` filter, which can be used to customize the permissions that control whether the `Metadata` metabox as a whole or each individual box is displayed in the post, page and custom post type's editing screen depending on the user's capabilities. See Example 10 in the plugin description page for the details.
  - Customizable video player size information in Twitter Player Cards (`amt_twitter_cards_video_player_size` filter).
  - The automatically generated `keywords` meta tag now also includes the terms of all public non-builtin taxonomies.
+ - Updated translations.
 - [2.5.3](http://www.codetrax.org/versions/199)
  - Clearly marked the referenced items functionality as experimental.
  - Re-arrange OpenGraph metadata.

@@ -3,7 +3,7 @@
 Plugin Name: Add Meta Tags
 Plugin URI: http://www.g-loaded.eu/2006/01/05/add-meta-tags-wordpress-plugin/
 Description: Add basic meta tags and also Opengraph, Schema.org Microdata, Twitter Cards and Dublin Core metadata to optimize your web site for better SEO.
-Version: 2.5.4
+Version: 2.5.5
 Author: George Notaras
 Author URI: http://www.g-loaded.eu/
 License: Apache License v2
@@ -48,20 +48,26 @@ Domain Path: /languages/
  *  The NOTICE file contains additional licensing and copyright information.
  */
 
+// Prevent direct access to this file.
+if ( ! defined( 'ABSPATH' ) ) {
+    header( 'HTTP/1.0 403 Forbidden' );
+    echo 'This file should not be accessed directly!';
+    exit; // Exit if accessed directly
+}
 
 // Store plugin directory
-define('AMT_DIR', dirname(__FILE__));
+define( 'AMT_DIR', plugin_dir_path( __FILE__ ) );
 
 // Import modules
-require_once( join( DIRECTORY_SEPARATOR, array( AMT_DIR, 'amt-settings.php' ) ) );
-require_once( join( DIRECTORY_SEPARATOR, array( AMT_DIR, 'amt-admin-panel.php' ) ) );
-require_once( join( DIRECTORY_SEPARATOR, array( AMT_DIR, 'amt-utils.php' ) ) );
-require_once( join( DIRECTORY_SEPARATOR, array( AMT_DIR, 'amt-template-tags.php' ) ) );
-require_once( join( DIRECTORY_SEPARATOR, array( AMT_DIR, 'metadata', 'amt_basic.php' ) ) );
-require_once( join( DIRECTORY_SEPARATOR, array( AMT_DIR, 'metadata', 'amt_twitter_cards.php' ) ) );
-require_once( join( DIRECTORY_SEPARATOR, array( AMT_DIR, 'metadata', 'amt_opengraph.php' ) ) );
-require_once( join( DIRECTORY_SEPARATOR, array( AMT_DIR, 'metadata', 'amt_dublin_core.php' ) ) );
-require_once( join( DIRECTORY_SEPARATOR, array( AMT_DIR, 'metadata', 'amt_schemaorg.php' ) ) );
+require_once( AMT_DIR . 'amt-settings.php' );
+require_once( AMT_DIR . 'amt-admin-panel.php' );
+require_once( AMT_DIR . 'amt-utils.php' );
+require_once( AMT_DIR . 'amt-template-tags.php' );
+require_once( AMT_DIR . 'metadata/amt_basic.php' );
+require_once( AMT_DIR . 'metadata/amt_twitter_cards.php' );
+require_once( AMT_DIR . 'metadata/amt_opengraph.php' );
+require_once( AMT_DIR . 'metadata/amt_dublin_core.php' );
+require_once( AMT_DIR . 'metadata/amt_schemaorg.php' );
 
 /**
  * Translation Domain
