@@ -4,7 +4,7 @@ Donate link: http://bit.ly/HvUakt
 Tags: amt, meta, metadata, seo, optimize, ranking, description, keywords, metatag, schema, opengraph, dublin core, schema.org, microdata, google, twitter cards, google plus, yahoo, bing, search engine optimization, rich snippets, semantic, structured, meta tags
 Requires at least: 3.1.0
 Tested up to: 4.2
-Stable tag: 2.6.0
+Stable tag: 2.6.1
 License: Apache License v2
 License URI: http://www.apache.org/licenses/LICENSE-2.0.txt
 
@@ -148,6 +148,7 @@ Also, make sure you read Gingerling's guide about <a href="http://community.phpl
 **Twitter Cards**
 
 Twitter Cards can be automatically generated for content and attachment pages. The type of card that is generated depends either on the post format or the mime type of the attachment. More specifically:
+
 - A `summary` card is generated for posts with one of the `standard`, `aside`, `link`, `quote`, `status` and `chat` formats.
 - A `summary_large_image` card is generated for posts with the `image` format. An image is expected to be attached or embedded to the post.
 - A `gallery` card is generated for posts with the `gallery` format. At least one image is expected to be attached or embedded to the post.
@@ -570,8 +571,9 @@ Screenshots as of v2.4.0
 
 Please check out the changelog of each release by following the links below. You can also check the [roadmap](http://www.codetrax.org/projects/wp-add-meta-tags/roadmap "Add-Meta-Tags Roadmap") regarding future releases of the plugin.
 
+- [2.6.1](http://www.codetrax.org/versions/224)
 - [2.6.0](http://www.codetrax.org/versions/223)
- - Added full support for the generation of the `Player` Twitter Card for locally hosted audio and video. Make sure your web site is accessible over the HTTPS protocol before enabling this feature in the plugin settings, otherwise the generated Player Cards will not be rendered by Twitter. This feature is experimentalnd should be considred in beta phase. Your feedback is welcome.
+ - Added full support for the generation of the `Player` Twitter Card for locally hosted audio and video. Make sure your web site is accessible over the HTTPS protocol before enabling this feature in the plugin settings, otherwise the generated Player Cards will not be rendered by Twitter. This feature is experimental and should be considered in beta phase. Your feedback is welcome.
  - Added full support for enabling/disabling the features of the `Metadata` metabox in the plugin configuration panel. Advanced customization of the availability of these features on a per user basis or depending upon each user's permissions, is possible through the `amt_metadata_metabox_permissions` filter.
  - The information about the supported Twitter Cards has been updated in the plugin description page on WordPress.org.
 - [2.5.5](http://www.codetrax.org/versions/232)
