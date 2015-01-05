@@ -49,21 +49,60 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 
-/**
- * Administration Panel - Add-Meta-Tags Settings
- */
-
-function amt_add_pages() {
-    add_options_page(__('Metadata Settings', 'add-meta-tags'), __('Metadata', 'add-meta-tags'), 'manage_options', 'add-meta-tags-options', 'amt_options_page');
-}
-add_action('admin_menu', 'amt_add_pages');
-
-
+// Display information message
 function amt_show_info_msg($msg) {
     echo '<div id="message" class="updated fade"><p>' . esc_attr( $msg ) . '</p></div>';
 }
 
 
+/**
+ * Administration Panel - Add-Meta-Tags Settings
+ */
+
+function amt_admin_init() {
+
+    // Here we just add some dummy variables that contain the plugin name and
+    // the description exactly as they appear in the plugin metadata, so that
+    // they can be translated.
+    $amt_plugin_name = __('Add Meta Tags', 'add-meta-tags');
+    $amt_plugin_description = __('Add basic meta tags and also Opengraph, Schema.org Microdata, Twitter Cards and Dublin Core metadata to optimize your web site for better SEO.', 'add-meta-tags');
+
+    // Perform automatic settings upgrade based on settings version.
+    // Also creates initial default settings automatically.
+    amt_plugin_upgrade();
+
+    // Register scripts and styles
+
+    /* Register our script for the color picker. */
+    // wp_register_script( 'myPluginScript', plugins_url( 'script.js', AMT_PLUGIN_FILE ) );
+    /* Register our stylesheet. */
+    // wp_register_style( 'myPluginStylesheet', plugins_url( 'stylesheet.css', AMT_PLUGIN_FILE ) );
+
+}
+add_action( 'admin_init', 'amt_admin_init' );
+
+
+function amt_admin_menu() {
+    /* Register our plugin page */
+    add_options_page( __('Metadata Settings', 'add-meta-tags'), __('Metadata', 'add-meta-tags'), 'manage_options', 'add-meta-tags-options', 'amt_options_page' );
+}
+add_action( 'admin_menu', 'amt_admin_menu');
+
+
+/** Enqueue scripts and styles
+ *  From: http://codex.wordpress.org/Plugin_API/Action_Reference/admin_enqueue_scripts#Example:_Target_a_Specific_Admin_Page
+ */
+function amt_enqueue_admin_scripts_and_styles( $hook ) {
+    //var_dump($hook);
+    if ( 'settings_page_add-meta-tags-options' != $hook ) {
+        return;
+    }
+    // Enqueue script and style for the color picker.
+    //wp_enqueue_script( 'myPluginScript' );
+    //wp_enqueue_style( 'myPluginStylesheet' );
+}
+add_action( 'admin_enqueue_scripts', 'amt_enqueue_admin_scripts_and_styles' );
+// Note: `admin_print_styles` should not be used to enqueue styles or scripts on the admin pages. Use `admin_enqueue_scripts` instead. 
 
 
 function amt_options_page() {
@@ -87,8 +126,7 @@ function amt_options_page() {
 
     // Get the options from the DB.
     $options = get_option("add_meta_tags_opts");
-
-    // var_dump($options);
+    //var_dump($options);
 
     /*
     Configuration Page
@@ -313,6 +351,13 @@ function amt_options_page() {
                 '.__('Automatically generate Twitter Cards meta tags for content and attachments. For more information, please refer to the <a href="https://dev.twitter.com/docs/cards">Twitter Cards specification</a>.', 'add-meta-tags').'
                 </label>
                 <br />
+
+                <input id="tc_enable_player_card_local" type="checkbox" value="1" name="tc_enable_player_card_local" '. (($options["tc_enable_player_card_local"]=="1") ? 'checked="checked"' : '') .'" />
+                <label for="tc_enable_player_card_local">
+                '.__('Enable the generation of <em>player</em> cards for locally hosted audio and video attachments or for posts with their post format set to audio or video. In the latter case, an audio or video is expected to be attached to the post respectively. A mandatory requirement for this feature, as outlined in the Twitter Cards specifications, is secure access to your web site over the HTTPS protocol. If secure access to your web site has not been configured properly, the player cards will not be rendered by the Twitter service. Moreover, using self-signed certificates could cause problems which might be hard to identify. This feature should be considered experimental.', 'add-meta-tags').'
+                </label>
+                <br />
+
                 <strong>'.__('Important Notes', 'add-meta-tags').'</strong>:
                 <br /> &raquo; '
                 .__('In order to generate the <code>twitter:site</code> and <code>twitter:creator</code> meta tags, it is required to provide the respective usernames of the Twitter account of the author and/or the publisher of the content. Update your WordPress user\'s <a href="profile.php">profile page</a> and fill in the relevant usernames under the section <em>Contact Info</em>.', 'add-meta-tags').'
@@ -353,6 +398,50 @@ function amt_options_page() {
                 .__('By default, this feature links the author and publisher objects to the author archive and the front page of your web site respectively. In order to link to the author\'s profile and publisher\'s page on Google+, it is required to provide the respective URLs. These settings can be added to your WordPress user <a href="profile.php">profile page</a> under the section <em>Contact Info</em>.', 'add-meta-tags').'
                 <br /> &raquo; '
                 .__('Once you have filled in the URLs to the author profile and the publisher page on Google+, the relevant link elements with the attributes <code>rel="author"</code> and <code>rel="publisher"</code> are automatically added to the head area of the web page.', 'add-meta-tags').'
+            </fieldset>
+            </td>
+            </tr>
+
+            <tr valign="top">
+            <th scope="row">'.__('Metabox Features', 'add-meta-tags').'</th>
+            <td>
+            <fieldset>
+                <legend class="screen-reader-text"><span>'.__('Metabox Features', 'add-meta-tags').'</span></legend>
+
+                <p>'.__('It is possible to partially customize the generated metadata on a per post basis through the <em>Metadata</em> metabox which exists in the post editing screen. Below you can choose which metabox features should be enabled. Enabling or disabling these features has no effect on the custom data that has been stored for each post.', 'add-meta-tags').'</p>
+
+                <p><input id="metabox_enable_description" type="checkbox" value="1" name="metabox_enable_description" '. (($options["metabox_enable_description"]=="1") ? 'checked="checked"' : '') .'" />
+                <label for="metabox_enable_description">
+                '.__('Custom description (<em>Recommended</em>).', 'add-meta-tags').'
+                </label></p>
+
+                <p><input id="metabox_enable_keywords" type="checkbox" value="1" name="metabox_enable_keywords" '. (($options["metabox_enable_keywords"]=="1") ? 'checked="checked"' : '') .'" />
+                <label for="metabox_enable_keywords">
+                '.__('Custom keywords (<em>Recommended</em>).', 'add-meta-tags').'
+                </label></p>
+
+                <p><input id="metabox_enable_title" type="checkbox" value="1" name="metabox_enable_title" '. (($options["metabox_enable_title"]=="1") ? 'checked="checked"' : '') .'" />
+                <label for="metabox_enable_title">
+                '.__('Custom content of the <code>title</code> HTML element.', 'add-meta-tags').'
+                </label></p>
+
+                <p><input id="metabox_enable_news_keywords" type="checkbox" value="1" name="metabox_enable_news_keywords" '. (($options["metabox_enable_news_keywords"]=="1") ? 'checked="checked"' : '') .'" />
+                <label for="metabox_enable_news_keywords">
+                '.__('Custom news keywords. (<a target="_blank" href="http://support.google.com/news/publisher/bin/answer.py?hl=en&answer=68297">more info</a>)', 'add-meta-tags').'
+                </label></p>
+
+                <p><input id="metabox_enable_full_metatags" type="checkbox" value="1" name="metabox_enable_full_metatags" '. (($options["metabox_enable_full_metatags"]=="1") ? 'checked="checked"' : '') .'" />
+                <label for="metabox_enable_full_metatags">
+                '.__('Full meta tags box.', 'add-meta-tags').'
+                </label></p>
+
+                <p><input id="metabox_enable_referenced_list" type="checkbox" value="1" name="metabox_enable_referenced_list" '. (($options["metabox_enable_referenced_list"]=="1") ? 'checked="checked"' : '') .'" />
+                <label for="metabox_enable_referenced_list">
+                '.__('Referenced items. (Experimental feature. Not recommended.)', 'add-meta-tags').'
+                </label></p>
+
+                <p>'.__('The metabox feature selection above affects all users. Advanced customization of the availability of these features on a per user basis or depending upon each user\'s permissions, is possible through the <code>amt_metadata_metabox_permissions</code> filter.', 'add-meta-tags').'</p>
+
             </fieldset>
             </td>
             </tr>
@@ -556,11 +645,11 @@ function amt_metadata_box_css_js () {
     wp_enqueue_script('jquery-ui-widget');
     wp_enqueue_script('jquery-ui-tabs');
 
-    //wp_register_style( 'amt-jquery-ui-core', plugins_url('css/jquery.ui.core.css', __FILE__) );
+    //wp_register_style( 'amt-jquery-ui-core', plugins_url('css/jquery.ui.core.css', AMT_PLUGIN_FILE) );
     //wp_enqueue_style( 'amt-jquery-ui-core' );
-    //wp_register_style( 'amt-jquery-ui-tabs', plugins_url('css/jquery.ui.tabs.css', __FILE__) );
+    //wp_register_style( 'amt-jquery-ui-tabs', plugins_url('css/jquery.ui.tabs.css', AMT_PLUGIN_FILE) );
     //wp_enqueue_style( 'amt-jquery-ui-tabs' );
-    wp_register_style( 'amt-metabox-tabs', plugins_url('css/amt-metabox-tabs.css', __FILE__) );
+    wp_register_style( 'amt-metabox-tabs', plugins_url('css/amt-metabox-tabs.css', AMT_PLUGIN_FILE) );
     wp_enqueue_style( 'amt-metabox-tabs' );
 
 }
@@ -615,7 +704,7 @@ function amt_inner_metadata_box( $post ) {
     */
 
     // Use a nonce field for verification
-    wp_nonce_field( plugin_basename( __FILE__ ), 'amt_noncename' );
+    wp_nonce_field( plugin_basename( AMT_PLUGIN_FILE ), 'amt_noncename' );
 
     // Get the Metadata metabox permissions (filtered)
     $metabox_permissions = amt_get_metadata_metabox_permissions();
@@ -623,12 +712,18 @@ function amt_inner_metadata_box( $post ) {
     // Get the post type. Will be used to customize the displayed notes.
     $post_type = get_post_type( $post->ID );
 
+    // Get the Add-Meta-Tags options.
+    $options = get_option("add_meta_tags_opts");
+
     // Display the meta box HTML code.
+
+    $metabox_has_features = false;
 
     // Custom description
     
     // Description box permission check (can be user customized via filter).
-    if ( current_user_can( $metabox_permissions['description_box_capability'] ) ) {
+    if ( $options['metabox_enable_description'] == '1' && current_user_can( $metabox_permissions['description_box_capability'] ) ) {
+        $metabox_has_features = true;
 
         // Retrieve the field data from the database.
         $custom_description_value = amt_get_post_meta_description( $post->ID );
@@ -668,7 +763,8 @@ function amt_inner_metadata_box( $post ) {
     // Custom keywords
 
     // Keywords box permission check (can be user customized via filter).
-    if ( current_user_can( $metabox_permissions['keywords_box_capability'] ) ) {
+    if ( $options['metabox_enable_keywords'] == '1' && current_user_can( $metabox_permissions['keywords_box_capability'] ) ) {
+        $metabox_has_features = true;
 
         // Retrieve the field data from the database.
         $custom_keywords_value = amt_get_post_meta_keywords( $post->ID );
@@ -713,7 +809,8 @@ function amt_inner_metadata_box( $post ) {
     // Custom title tag
 
     // Custom title box permission check (can be user customized via filter).
-    if ( current_user_can( $metabox_permissions['title_box_capability'] ) ) {
+    if ( $options['metabox_enable_title'] == '1' && current_user_can( $metabox_permissions['title_box_capability'] ) ) {
+        $metabox_has_features = true;
 
         // Retrieve the field data from the database.
         $custom_title_value = amt_get_post_meta_title( $post->ID );
@@ -733,7 +830,8 @@ function amt_inner_metadata_box( $post ) {
     // 'news_keywords' meta tag
     
     // 'news_keywords' box permission check (can be user customized via filter).
-    if ( current_user_can( $metabox_permissions['news_keywords_box_capability'] ) ) {
+    if ( $options['metabox_enable_news_keywords'] == '1' && current_user_can( $metabox_permissions['news_keywords_box_capability'] ) ) {
+        $metabox_has_features = true;
 
         // Retrieve the field data from the database.
         $custom_newskeywords_value = amt_get_post_meta_newskeywords( $post->ID );
@@ -753,7 +851,8 @@ function amt_inner_metadata_box( $post ) {
     // per post full meta tags
     
     // Full meta tags box permission check (can be user customized via filter).
-    if ( current_user_can( $metabox_permissions['full_metatags_box_capability'] ) ) {
+    if ( $options['metabox_enable_full_metatags'] == '1' && current_user_can( $metabox_permissions['full_metatags_box_capability'] ) ) {
+        $metabox_has_features = true;
 
         // Retrieve the field data from the database.
         $custom_full_metatags_value = amt_get_post_meta_full_metatags( $post->ID );
@@ -781,7 +880,8 @@ function amt_inner_metadata_box( $post ) {
     // List of URLs of items referenced in the post.
 
     // Referenced items box permission check (can be user customized via filter).
-    if ( current_user_can( $metabox_permissions['referenced_list_box_capability'] ) ) {
+    if ( $options['metabox_enable_referenced_list'] == '1' && current_user_can( $metabox_permissions['referenced_list_box_capability'] ) ) {
+        $metabox_has_features = true;
 
         // Retrieve the field data from the database.
         $custom_referenced_list_value = amt_get_post_meta_referenced_list( $post->ID );
@@ -795,6 +895,14 @@ function amt_inner_metadata_box( $post ) {
             </p>
         ');
 
+    }
+
+
+    // If no features have been enabled, print an informative message
+    if ( $metabox_has_features === false ) {
+        print('
+            <p>'.__('No features have been enabled for this metabox in the Add-Meta-Tags plugin <a href="' . admin_url( 'options-general.php?page=add-meta-tags-options' ) . '">settings</a> or you do not have enough permissions to access the available features.', 'add-meta-tags').'</p>
+        ');
     }
 
 }
@@ -816,7 +924,7 @@ function amt_save_postdata( $post_id, $post ) {
     /* Verify the nonce before proceeding. */
     // Verify this came from the our screen and with proper authorization,
     // because save_post can be triggered at other times
-    if ( !isset($_POST['amt_noncename']) || !wp_verify_nonce( $_POST['amt_noncename'], plugin_basename( __FILE__ ) ) )
+    if ( !isset($_POST['amt_noncename']) || !wp_verify_nonce( $_POST['amt_noncename'], plugin_basename( AMT_PLUGIN_FILE ) ) )
         return;
 
     // Get the Metadata metabox permissions (filtered)
@@ -826,6 +934,9 @@ function amt_save_postdata( $post_id, $post ) {
     if ( ! current_user_can( $metabox_permissions['global_metabox_capability'] ) ) {
         return;
     }
+
+    // Get the Add-Meta-Tags options.
+    $options = get_option("add_meta_tags_opts");
 
     /* Get the post type object. */
 	$post_type_obj = get_post_type_object( $post->post_type );
@@ -881,7 +992,7 @@ function amt_save_postdata( $post_id, $post ) {
     // permissions before we save any data in the database.
 
     // Description
-    if ( current_user_can( $metabox_permissions['description_box_capability'] ) ) {
+    if ( $options['metabox_enable_description'] == '1' && current_user_can( $metabox_permissions['description_box_capability'] ) ) {
         if ( empty($description_value) ) {
             delete_post_meta($post_id, $amt_description_field_name);
             // Also clean up old description field
@@ -894,7 +1005,7 @@ function amt_save_postdata( $post_id, $post ) {
     }
 
     // Keywords
-    if ( current_user_can( $metabox_permissions['keywords_box_capability'] ) ) {
+    if ( $options['metabox_enable_keywords'] == '1' && current_user_can( $metabox_permissions['keywords_box_capability'] ) ) {
         if ( empty($keywords_value) ) {
             delete_post_meta($post_id, $amt_keywords_field_name);
             // Also clean up old keywords field
@@ -907,7 +1018,7 @@ function amt_save_postdata( $post_id, $post ) {
     }
 
     // Title
-    if ( current_user_can( $metabox_permissions['title_box_capability'] ) ) {
+    if ( $options['metabox_enable_title'] == '1' && current_user_can( $metabox_permissions['title_box_capability'] ) ) {
         if ( empty($title_value) ) {
             delete_post_meta($post_id, $amt_title_field_name);
         } else {
@@ -916,7 +1027,7 @@ function amt_save_postdata( $post_id, $post ) {
     }
 
     // 'news_keywords'
-    if ( current_user_can( $metabox_permissions['news_keywords_box_capability'] ) ) {
+    if ( $options['metabox_enable_news_keywords'] == '1' && current_user_can( $metabox_permissions['news_keywords_box_capability'] ) ) {
         if ( empty($newskeywords_value) ) {
             delete_post_meta($post_id, $amt_newskeywords_field_name);
         } else {
@@ -925,7 +1036,7 @@ function amt_save_postdata( $post_id, $post ) {
     }
 
     // per post full meta tags
-    if ( current_user_can( $metabox_permissions['full_metatags_box_capability'] ) ) {
+    if ( $options['metabox_enable_full_metatags'] == '1' && current_user_can( $metabox_permissions['full_metatags_box_capability'] ) ) {
         if ( empty($full_metatags_value) ) {
             delete_post_meta($post_id, $amt_full_metatags_field_name);
         } else {
@@ -934,7 +1045,7 @@ function amt_save_postdata( $post_id, $post ) {
     }
 
     // Referenced list
-    if ( current_user_can( $metabox_permissions['referenced_list_box_capability'] ) ) {
+    if ( $options['metabox_enable_referenced_list'] == '1' && current_user_can( $metabox_permissions['referenced_list_box_capability'] ) ) {
         if ( empty($referenced_list_value) ) {
             delete_post_meta($post_id, $amt_referenced_list_field_name);
         } else {

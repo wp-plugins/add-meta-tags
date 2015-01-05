@@ -3,7 +3,7 @@
 Plugin Name: Add Meta Tags
 Plugin URI: http://www.g-loaded.eu/2006/01/05/add-meta-tags-wordpress-plugin/
 Description: Add basic meta tags and also Opengraph, Schema.org Microdata, Twitter Cards and Dublin Core metadata to optimize your web site for better SEO.
-Version: 2.5.5
+Version: 2.6.0
 Author: George Notaras
 Author URI: http://www.g-loaded.eu/
 License: Apache License v2
@@ -56,32 +56,35 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Store plugin directory
-define( 'AMT_DIR', plugin_dir_path( __FILE__ ) );
+define( 'AMT_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
+// Store plugin main file path
+define( 'AMT_PLUGIN_FILE', __FILE__ );
 
 // Import modules
-require_once( AMT_DIR . 'amt-settings.php' );
-require_once( AMT_DIR . 'amt-admin-panel.php' );
-require_once( AMT_DIR . 'amt-utils.php' );
-require_once( AMT_DIR . 'amt-template-tags.php' );
-require_once( AMT_DIR . 'metadata/amt_basic.php' );
-require_once( AMT_DIR . 'metadata/amt_twitter_cards.php' );
-require_once( AMT_DIR . 'metadata/amt_opengraph.php' );
-require_once( AMT_DIR . 'metadata/amt_dublin_core.php' );
-require_once( AMT_DIR . 'metadata/amt_schemaorg.php' );
+require_once( AMT_PLUGIN_DIR . 'amt-settings.php' );
+require_once( AMT_PLUGIN_DIR . 'amt-admin-panel.php' );
+require_once( AMT_PLUGIN_DIR . 'amt-utils.php' );
+require_once( AMT_PLUGIN_DIR . 'amt-template-tags.php' );
+require_once( AMT_PLUGIN_DIR . 'amt-embed.php' );
+require_once( AMT_PLUGIN_DIR . 'metadata/amt_basic.php' );
+require_once( AMT_PLUGIN_DIR . 'metadata/amt_twitter_cards.php' );
+require_once( AMT_PLUGIN_DIR . 'metadata/amt_opengraph.php' );
+require_once( AMT_PLUGIN_DIR . 'metadata/amt_dublin_core.php' );
+require_once( AMT_PLUGIN_DIR . 'metadata/amt_schemaorg.php' );
 
 /**
  * Translation Domain
  *
  * Translation files are searched in: wp-content/plugins
  */
-load_plugin_textdomain('add-meta-tags', false, dirname( plugin_basename( __FILE__ ) ) . '/languages/');
+load_plugin_textdomain('add-meta-tags', false, dirname( plugin_basename( AMT_PLUGIN_FILE ) ) . '/languages/');
 
 
 /**
  * Settings Link in the ``Installed Plugins`` page
  */
 function amt_plugin_actions( $links, $file ) {
-    if( $file == plugin_basename(__FILE__) && function_exists( "admin_url" ) ) {
+    if( $file == plugin_basename( AMT_PLUGIN_FILE ) && function_exists( "admin_url" ) ) {
         $settings_link = '<a href="' . admin_url( 'options-general.php?page=add-meta-tags-options' ) . '">' . __('Settings') . '</a>';
         // Add the settings link before other links
         array_unshift( $links, $settings_link );
