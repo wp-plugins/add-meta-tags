@@ -148,6 +148,7 @@ Also, make sure you read Gingerling's guide about <a href="http://community.phpl
 **Twitter Cards**
 
 Twitter Cards can be automatically generated for content and attachment pages. The type of card that is generated depends either on the post format or the mime type of the attachment. More specifically:
+
 - A `summary` card is generated for posts with one of the `standard`, `aside`, `link`, `quote`, `status` and `chat` formats.
 - A `summary_large_image` card is generated for posts with the `image` format. An image is expected to be attached or embedded to the post.
 - A `gallery` card is generated for posts with the `gallery` format. At least one image is expected to be attached or embedded to the post.
