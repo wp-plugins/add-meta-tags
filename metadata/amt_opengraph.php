@@ -42,6 +42,9 @@
  * Opengraph Specification: http://ogp.me
  *
  * Module containing functions related to Opengraph Protocol Metadata
+ *
+ * article object: https://developers.facebook.com/docs/reference/opengraph/object-type/article/
+ * video.other object: https://developers.facebook.com/docs/reference/opengraph/object-type/video.other/
  */
 
 // Prevent direct access to this file.
@@ -333,6 +336,37 @@ function amt_add_opengraph_metadata_head( $post, $attachments, $embedded_media, 
         }
         // Locale
         $metadata_arr[] = '<meta property="og:locale" content="' . esc_attr( str_replace('-', '_', amt_get_language_content()) ) . '" />';
+
+        // og:updated_time
+        $metadata_arr[] = '<meta property="og:updated_time" content="' . esc_attr( amt_iso8601_date($post->post_modified) ) . '" />';
+
+        // Metadata specific to each attachment type
+
+        if ( 'image' == $attachment_type ) {
+
+            // Allow filtering of the image size.
+            $image_size = apply_filters( 'amt_image_size_attachment', 'large' );
+            $metadata_arr = array_merge( $metadata_arr, amt_get_opengraph_image_metatags( $post->ID, $size=$image_size ) );
+
+        } elseif ( 'video' == $attachment_type ) {
+            
+            // Video tags
+            $metadata_arr[] = '<meta property="og:video" content="' . esc_url_raw( wp_get_attachment_url($post->ID) ) . '" />';
+            //$metadata_arr[] = '<meta property="og:video:secure_url" content="' . esc_url_raw( str_replace('http:', 'https:', $main_size_meta[0]) ) . '" />';
+            //$metadata_arr[] = '<meta property="og:video:width" content="' . esc_attr( $main_size_meta[1] ) . '" />';
+            //$metadata_arr[] = '<meta property="og:video:height" content="' . esc_attr( $main_size_meta[2] ) . '" />';
+            $metadata_arr[] = '<meta property="og:video:type" content="' . esc_attr( $mime_type ) . '" />';
+
+        } elseif ( 'audio' == $attachment_type ) {
+            
+            // Audio tags
+            $metadata_arr[] = '<meta property="og:audio" content="' . esc_url_raw( wp_get_attachment_url($post->ID) ) . '" />';
+            //$metadata_arr[] = '<meta property="og:audio:secure_url" content="' . esc_url_raw( str_replace('http:', 'https:', $main_size_meta[0]) ) . '" />';
+            $metadata_arr[] = '<meta property="og:audio:type" content="' . esc_attr( $mime_type ) . '" />';
+        }
+
+        // Article: meta tags
+
         // Dates
         $metadata_arr[] = '<meta property="article:published_time" content="' . esc_attr( amt_iso8601_date($post->post_date) ) . '" />';
         $metadata_arr[] = '<meta property="article:modified_time" content="' . esc_attr( amt_iso8601_date($post->post_modified) ) . '" />';
@@ -353,31 +387,6 @@ function amt_add_opengraph_metadata_head( $post, $attachments, $embedded_media, 
             $metadata_arr[] = '<meta property="article:publisher" content="' . esc_url_raw( $fb_publisher_url, array('http', 'https', 'mailto') ) . '" />';
         } else {
             $metadata_arr[] = '<meta property="article:publisher" content="' . esc_url_raw( trailingslashit( get_bloginfo('url') ) ) . '" />';
-        }
-
-        // Metadata specific to each attachment type
-
-        if ( 'image' == $attachment_type ) {
-
-            // Allow filtering of the image size.
-            $image_size = apply_filters( 'amt_image_size_attachment', 'large' );
-            $metadata_arr = array_merge( $metadata_arr, amt_get_opengraph_image_metatags( $post->ID, $size=$image_size ) );
-
-        } elseif ( 'video' == $attachment_type ) {
-            
-            // Video tags
-            $metadata_arr[] = '<meta property="og:video" content="' . esc_url_raw( $post->guid ) . '" />';
-            //$metadata_arr[] = '<meta property="og:video:secure_url" content="' . esc_url_raw( str_replace('http:', 'https:', $main_size_meta[0]) ) . '" />';
-            //$metadata_arr[] = '<meta property="og:video:width" content="' . esc_attr( $main_size_meta[1] ) . '" />';
-            //$metadata_arr[] = '<meta property="og:video:height" content="' . esc_attr( $main_size_meta[2] ) . '" />';
-            $metadata_arr[] = '<meta property="og:video:type" content="' . esc_attr( $mime_type ) . '" />';
-
-        } elseif ( 'audio' == $attachment_type ) {
-            
-            // Audio tags
-            $metadata_arr[] = '<meta property="og:audio" content="' . esc_url_raw( $post->guid ) . '" />';
-            //$metadata_arr[] = '<meta property="og:audio:secure_url" content="' . esc_url_raw( str_replace('http:', 'https:', $main_size_meta[0]) ) . '" />';
-            $metadata_arr[] = '<meta property="og:audio:type" content="' . esc_attr( $mime_type ) . '" />';
         }
 
 
@@ -411,54 +420,9 @@ function amt_add_opengraph_metadata_head( $post, $attachments, $embedded_media, 
         }
         // Locale
         $metadata_arr[] = '<meta property="og:locale" content="' . esc_attr( str_replace('-', '_', amt_get_language_content()) ) . '" />';
-        // Dates
-        $metadata_arr[] = '<meta property="article:published_time" content="' . esc_attr( amt_iso8601_date($post->post_date) ) . '" />';
-        $metadata_arr[] = '<meta property="article:modified_time" content="' . esc_attr( amt_iso8601_date($post->post_modified) ) . '" />';
 
-        // Author
-        // If a Facebook author profile URL has been provided, it has priority,
-        // Otherwise fall back to the WordPress author archive.
-        $fb_author_url = get_the_author_meta('amt_facebook_author_profile_url', $post->post_author);
-        if ( !empty($fb_author_url) ) {
-            $metadata_arr[] = '<meta property="article:author" content="' . esc_url_raw( $fb_author_url, array('http', 'https', 'mailto') ) . '" />';
-        } else {
-            $metadata_arr[] = '<meta property="article:author" content="' . esc_url_raw( get_author_posts_url( get_the_author_meta( 'ID', $post->post_author ) ) ) . '" />';
-        }
-
-        // Publisher
-        // If a Facebook publisher profile URL has been provided, it has priority,
-        // Otherwise fall back to the WordPress blog home url.
-        $fb_publisher_url = get_the_author_meta('amt_facebook_publisher_profile_url', $post->post_author);
-        if ( !empty($fb_publisher_url) ) {
-            $metadata_arr[] = '<meta property="article:publisher" content="' . esc_url_raw( $fb_publisher_url, array('http', 'https', 'mailto') ) . '" />';
-        } else {
-            $metadata_arr[] = '<meta property="article:publisher" content="' . esc_url_raw( trailingslashit( get_bloginfo('url') ) ) . '" />';
-        }
-
-        /*
-        // article:section: We use the first category as the section.
-        $first_cat = amt_get_first_category($post);
-        if ( ! empty( $first_cat ) ) {
-            $metadata_arr[] = '<meta property="article:section" content="' . esc_attr( $first_cat ) . '" />';
-        }
-        */
-        // article:section: We use print an ``article:section`` meta tag for each of the post's categories.
-        foreach( get_the_category($post->ID) as $cat ) {
-            $section = trim( $cat->cat_name );
-            if ( ! empty( $section ) ) {
-                $metadata_arr[] = '<meta property="article:section" content="' . esc_attr( $section ) . '" />';
-            }
-        }
-        
-        // article:tag: Keywords are listed as post tags
-        $keywords = explode(',', amt_get_content_keywords($post));
-        foreach ($keywords as $tag) {
-            $tag = trim( $tag );
-            if (!empty($tag)) {
-                $metadata_arr[] = '<meta property="article:tag" content="' . esc_attr( $tag ) . '" />';
-            }
-        }
-
+        // og:updated_time
+        $metadata_arr[] = '<meta property="og:updated_time" content="' . esc_attr( amt_iso8601_date($post->post_modified) ) . '" />';
 
         // We store the featured image ID in this variable so that it can easily be excluded
         // when all images are parsed from the $attachments array.
@@ -502,7 +466,7 @@ function amt_add_opengraph_metadata_head( $post, $attachments, $embedded_media, 
                 } elseif ( 'video' == $attachment_type ) {
                     
                     // Video tags
-                    $metadata_arr[] = '<meta property="og:video" content="' . esc_url_raw( $attachment->guid ) . '" />';
+                    $metadata_arr[] = '<meta property="og:video" content="' . esc_url_raw( wp_get_attachment_url($attachment->ID) ) . '" />';
                     //$metadata_arr[] = '<meta property="og:video:secure_url" content="' . esc_url_raw( str_replace('http:', 'https:', $main_size_meta[0]) ) . '" />';
                     //$metadata_arr[] = '<meta property="og:video:width" content="' . esc_attr( $main_size_meta[1] ) . '" />';
                     //$metadata_arr[] = '<meta property="og:video:height" content="' . esc_attr( $main_size_meta[2] ) . '" />';
@@ -511,7 +475,7 @@ function amt_add_opengraph_metadata_head( $post, $attachments, $embedded_media, 
                 } elseif ( 'audio' == $attachment_type ) {
                     
                     // Audio tags
-                    $metadata_arr[] = '<meta property="og:audio" content="' . esc_url_raw( $attachment->guid ) . '" />';
+                    $metadata_arr[] = '<meta property="og:audio" content="' . esc_url_raw( wp_get_attachment_url($attachment->ID) ) . '" />';
                     //$metadata_arr[] = '<meta property="og:audio:secure_url" content="' . esc_url_raw( str_replace('http:', 'https:', $main_size_meta[0]) ) . '" />';
                     $metadata_arr[] = '<meta property="og:audio:type" content="' . esc_attr( $mime_type ) . '" />';
                 }
@@ -536,6 +500,7 @@ function amt_add_opengraph_metadata_head( $post, $attachments, $embedded_media, 
         foreach( $embedded_media['videos'] as $embedded_item ) {
 
             $metadata_arr[] = '<meta property="og:video" content="' . esc_url_raw( $embedded_item['player'] ) . '" />';
+            $metadata_arr[] = '<meta property="og:video:secure_url" content="' . esc_url_raw( str_replace('http:', 'https:', $embedded_item['player']) ) . '" />';
             $metadata_arr[] = '<meta property="og:video:type" content="application/x-shockwave-flash" />';
             $metadata_arr[] = '<meta property="og:video:width" content="' . esc_attr( $embedded_item['width'] ) . '" />';
             $metadata_arr[] = '<meta property="og:video:height" content="' . esc_attr( $embedded_item['height'] ) . '" />';
@@ -544,6 +509,7 @@ function amt_add_opengraph_metadata_head( $post, $attachments, $embedded_media, 
         foreach( $embedded_media['sounds'] as $embedded_item ) {
 
             $metadata_arr[] = '<meta property="og:audio" content="' . esc_url_raw( $embedded_item['player'] ) . '" />';
+            $metadata_arr[] = '<meta property="og:audio:secure_url" content="' . esc_url_raw( str_replace('http:', 'https:', $embedded_item['player']) ) . '" />';
             $metadata_arr[] = '<meta property="og:audio:type" content="application/x-shockwave-flash" />';
 
         }
@@ -561,6 +527,78 @@ function amt_add_opengraph_metadata_head( $post, $attachments, $embedded_media, 
             if ( ! empty( $referenced_url ) ) {
                 $metadata_arr[] = '<meta property="og:referenced" content="' . esc_url_raw( $referenced_url ) . '" />';
             }
+        }
+
+        // Article: meta tags
+
+        if ( $og_type == 'article' ) {
+
+            // Dates
+            $metadata_arr[] = '<meta property="article:published_time" content="' . esc_attr( amt_iso8601_date($post->post_date) ) . '" />';
+            $metadata_arr[] = '<meta property="article:modified_time" content="' . esc_attr( amt_iso8601_date($post->post_modified) ) . '" />';
+
+            // Author
+            // If a Facebook author profile URL has been provided, it has priority,
+            // Otherwise fall back to the WordPress author archive.
+            $fb_author_url = get_the_author_meta('amt_facebook_author_profile_url', $post->post_author);
+            if ( !empty($fb_author_url) ) {
+                $metadata_arr[] = '<meta property="article:author" content="' . esc_url_raw( $fb_author_url, array('http', 'https', 'mailto') ) . '" />';
+            } else {
+                $metadata_arr[] = '<meta property="article:author" content="' . esc_url_raw( get_author_posts_url( get_the_author_meta( 'ID', $post->post_author ) ) ) . '" />';
+            }
+
+            // Publisher
+            // If a Facebook publisher profile URL has been provided, it has priority,
+            // Otherwise fall back to the WordPress blog home url.
+            $fb_publisher_url = get_the_author_meta('amt_facebook_publisher_profile_url', $post->post_author);
+            if ( !empty($fb_publisher_url) ) {
+                $metadata_arr[] = '<meta property="article:publisher" content="' . esc_url_raw( $fb_publisher_url, array('http', 'https', 'mailto') ) . '" />';
+            } else {
+                $metadata_arr[] = '<meta property="article:publisher" content="' . esc_url_raw( trailingslashit( get_bloginfo('url') ) ) . '" />';
+            }
+
+            /*
+            // article:section: We use the first category as the section.
+            $first_cat = amt_get_first_category($post);
+            if ( ! empty( $first_cat ) ) {
+                $metadata_arr[] = '<meta property="article:section" content="' . esc_attr( $first_cat ) . '" />';
+            }
+            */
+            // article:section: We use print an ``article:section`` meta tag for each of the post's categories.
+            foreach( get_the_category($post->ID) as $cat ) {
+                $section = trim( $cat->cat_name );
+                if ( ! empty( $section ) ) {
+                    $metadata_arr[] = '<meta property="article:section" content="' . esc_attr( $section ) . '" />';
+                }
+            }
+            
+            // article:tag: Keywords are listed as post tags
+            $keywords = explode(',', amt_get_content_keywords($post));
+            foreach ($keywords as $tag) {
+                $tag = trim( $tag );
+                if (!empty($tag)) {
+                    $metadata_arr[] = '<meta property="article:tag" content="' . esc_attr( $tag ) . '" />';
+                }
+            }
+
+        }
+
+        // video.other meta tags
+
+        elseif ( $og_type == 'video.other' ) {
+
+            // Dates
+            $metadata_arr[] = '<meta property="video:release_date" content="' . esc_attr( amt_iso8601_date($post->post_date) ) . '" />';
+
+            // video:tag: Keywords are listed as post tags
+            $keywords = explode(',', amt_get_content_keywords($post));
+            foreach ($keywords as $tag) {
+                $tag = trim( $tag );
+                if (!empty($tag)) {
+                    $metadata_arr[] = '<meta property="video:tag" content="' . esc_attr( $tag ) . '" />';
+                }
+            }
+
         }
 
     }
