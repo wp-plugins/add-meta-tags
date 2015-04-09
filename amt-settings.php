@@ -54,7 +54,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 function amt_get_default_options() {
     return array(
-        "settings_version"  => 8,       // IMPORTANT: SETTINGS UPGRADE: Every time settings are added or removed this has to be incremented.
+        "settings_version"  => 9,       // IMPORTANT: SETTINGS UPGRADE: Every time settings are added or removed this has to be incremented.
         "site_description"  => "",      // Front page description
         "site_keywords"     => "",      // Front page keywords
         "global_keywords"   => "",      // These keywords are added to the 'keywords' meta tag on all posts and pages
@@ -65,6 +65,7 @@ function amt_get_default_options() {
         "auto_dublincore"   => "0",
         "auto_twitter"      => "0",     // Twitter Cards
         "tc_enable_player_card_local" => "0",   // Enable the player card for locally hosted audio and video attachments.
+        "tc_enforce_summary_large_image" => "0",   // Set summary_large_image as the default card.
         "auto_schemaorg"    => "0",
         "noodp_description" => "0",
         "noindex_search_results"     => "1",
@@ -84,6 +85,7 @@ function amt_get_default_options() {
         //"social_main_facebook_admins" => "",
         "social_main_googleplus_publisher_profile_url" => "",
         "social_main_twitter_publisher_username" => "",
+        "has_https_access" => "0",
         "copyright_url"     => "",
         "default_image_url" => "",
         "review_mode"       => "0",
@@ -169,6 +171,17 @@ function amt_plugin_upgrade() {
     // Added "metabox_enable_referenced_list"
     // No migrations required. Addition takes place in (1).
 
+    // Version 2.7.2 (settings_version 7->8)
+    // Added "social_main_facebook_publisher_profile_url"
+    // Added "social_main_googleplus_publisher_profile_url"
+    // Added "social_main_twitter_publisher_username"
+    // No migrations required. Addition takes place in (1).
+
+    // Version 2.7.3 (settings_version 8->9)
+    // Added "has_https_access"
+    // Added "tc_enforce_summary_large_image"
+    // No migrations required. Addition takes place in (1).
+
     // 3) Clean stored options.
     foreach ($stored_options as $opt => $value) {
         if ( !array_key_exists($opt, $default_options) ) {
@@ -220,6 +233,10 @@ function amt_save_settings($post_payload) {
             } elseif ( $def_key == 'copyright_url' ) {
                 $add_meta_tags_opts[$def_key] = esc_url_raw( stripslashes( $post_payload[$def_key] ), array( 'http', 'https') );
             } elseif ( $def_key == 'default_image_url' ) {
+                $add_meta_tags_opts[$def_key] = esc_url_raw( stripslashes( $post_payload[$def_key] ), array( 'http', 'https') );
+            } elseif ( $def_key == 'social_main_facebook_publisher_profile_url' ) {
+                $add_meta_tags_opts[$def_key] = esc_url_raw( stripslashes( $post_payload[$def_key] ), array( 'http', 'https') );
+            } elseif ( $def_key == 'social_main_googleplus_publisher_profile_url' ) {
                 $add_meta_tags_opts[$def_key] = esc_url_raw( stripslashes( $post_payload[$def_key] ), array( 'http', 'https') );
             } else {
                 $add_meta_tags_opts[$def_key] = sanitize_text_field( stripslashes( $post_payload[$def_key] ) );

@@ -360,7 +360,7 @@ function amt_options_page() {
 
                 <h4>'.__('Twitter publisher username', 'add-meta-tags').':</h4>
 
-                <input name="social_main_twitter_publisher_username" type="text" id="social_main_twitter_publisher_username" class="code" value="' . esc_url_raw( stripslashes( $options["social_main_twitter_publisher_username"] ) ) . '" size="100" maxlength="1024" />
+                <input name="social_main_twitter_publisher_username" type="text" id="social_main_twitter_publisher_username" class="code" value="' . esc_attr( stripslashes( $options["social_main_twitter_publisher_username"] ) ) . '" size="100" maxlength="1024" />
                 <br />
                 <label for="social_main_twitter_publisher_username">
                 '.__('Enter the Twitter username of the publisher (without @).', 'add-meta-tags').'
@@ -421,6 +421,11 @@ function amt_options_page() {
                 <input id="auto_twitter" type="checkbox" value="1" name="auto_twitter" '. (($options["auto_twitter"]=="1") ? 'checked="checked"' : '') .'" />
                 <label for="auto_twitter">'.__('Automatically generate Twitter Cards meta tags.', 'add-meta-tags').'</label>
                 <p>'.__('If this option is enabled, Twitter Cards metadata is automatically generated for content and attachments. For more information, please refer to the <a href="https://dev.twitter.com/docs/cards">Twitter Cards specification</a>.', 'add-meta-tags').'</p>
+                <br />
+
+                <input id="tc_enforce_summary_large_image" type="checkbox" value="1" name="tc_enforce_summary_large_image" '. (($options["tc_enforce_summary_large_image"]=="1") ? 'checked="checked"' : '') .'" />
+                <label for="tc_enforce_summary_large_image">'.__('Enforce the use of <code>summary_large_image</code> as default card type.', 'add-meta-tags').'</label>
+                <p>'.__('If this setting is enabled, <code>summary_large_image</code> will be used as the default Twitter Card type instead of the <code>summary</code> card type.', 'add-meta-tags').'</p>
                 <br />
 
                 <input id="tc_enable_player_card_local" type="checkbox" value="1" name="tc_enable_player_card_local" '. (($options["tc_enable_player_card_local"]=="1") ? 'checked="checked"' : '') .'" />
@@ -567,6 +572,20 @@ function amt_options_page() {
                 '.__('Author based archives.', 'add-meta-tags').' ('.__('Even if checked, the first page of this type of archive is always indexed.', 'add-meta-tags').')
                 </label></p>
 
+                <br />
+            </fieldset>
+            </td>
+            </tr>
+
+            <tr valign="top">
+            <th scope="row">'.__('Secure Access', 'add-meta-tags').'</th>
+            <td>
+            <fieldset>
+                <legend class="screen-reader-text"><span>'.__('Secure Access', 'add-meta-tags').'</span></legend>
+
+                <input id="has_https_access" type="checkbox" value="1" name="has_https_access" '. (($options["has_https_access"]=="1") ? 'checked="checked"' : '') .'" />
+                <label for="has_https_access">'.__('Content and media are accessible over HTTPS.').'</label>
+                <p>'.__('Currently this option, if enabled, lets the plugin make decisions about whether to generate additional secure links even if the active connection does not use HTTPS. For instance, if the web site is accessed over HTTP and this options is enabled, additional <code>og:image:secure_url</code> meta tags will be generated for your local media. If the current connection uses HTTPS, then secure links are always generated.', 'add-meta-tags').'</p>
                 <br />
             </fieldset>
             </td>

@@ -142,6 +142,12 @@ function amt_add_opengraph_metadata_head( $post, $attachments, $embedded_media, 
         // Use the default image, if one has been set.
         if (!empty($options["default_image_url"])) {
             $metadata_arr[] = '<meta property="og:image" content="' . esc_url_raw( $options["default_image_url"] ) . '" />';
+            // If the current connection uses HTTPS, then generate og:image:secure_url
+            // If the current connection does not use HTTPS, but the "has_https_access" is enabled, then generate og:image:secure_url
+            // According to Facebook, if the web site requires HTTPS, og:image:secure_url is required even if og:image contains an HTTPS URL
+            if ( is_ssl() || ( ! is_ssl() && $options["has_https_access"] == "1" ) ) {
+                $metadata_arr[] = '<meta property="og:image:secure_url" content="' . esc_url_raw( str_replace('http:', 'https:', $options["default_image_url"] ) ) . '" />';
+            }
         }
 
 
@@ -175,11 +181,14 @@ function amt_add_opengraph_metadata_head( $post, $attachments, $embedded_media, 
         // Site Image
         if ( function_exists('has_post_thumbnail') && has_post_thumbnail( $post->ID ) ) {
             // Allow filtering of the image size.
-            $image_size = apply_filters( 'amt_image_size_index', 'medium' );
-            $metadata_arr = array_merge( $metadata_arr, amt_get_opengraph_image_metatags( get_post_thumbnail_id( $post->ID ), $size=$image_size ) );
+            $image_size = apply_filters( 'amt_image_size_index', 'full' );
+            $metadata_arr = array_merge( $metadata_arr, amt_get_opengraph_image_metatags( $options, get_post_thumbnail_id( $post->ID ), $size=$image_size ) );
         } elseif (!empty($options["default_image_url"])) {
             // Alternatively, use default image
             $metadata_arr[] = '<meta property="og:image" content="' . esc_url_raw( $options["default_image_url"] ) . '" />';
+            if ( is_ssl() || ( ! is_ssl() && $options["has_https_access"] == "1" ) ) {
+                $metadata_arr[] = '<meta property="og:image:secure_url" content="' . esc_url_raw( str_replace('http:', 'https:', $options["default_image_url"] ) ) . '" />';
+            }
         }
 
 
@@ -212,11 +221,76 @@ function amt_add_opengraph_metadata_head( $post, $attachments, $embedded_media, 
         // Site Image
         if ( function_exists('has_post_thumbnail') && has_post_thumbnail( $post->ID ) ) {
             // Allow filtering of the image size.
-            $image_size = apply_filters( 'amt_image_size_index', 'medium' );
-            $metadata_arr = array_merge( $metadata_arr, amt_get_opengraph_image_metatags( get_post_thumbnail_id( $post->ID ), $size=$image_size ) );
+            $image_size = apply_filters( 'amt_image_size_index', 'full' );
+            $metadata_arr = array_merge( $metadata_arr, amt_get_opengraph_image_metatags( $options, get_post_thumbnail_id( $post->ID ), $size=$image_size ) );
         } elseif (!empty($options["default_image_url"])) {
             // Alternatively, use default image
             $metadata_arr[] = '<meta property="og:image" content="' . esc_url_raw( $options["default_image_url"] ) . '" />';
+            if ( is_ssl() || ( ! is_ssl() && $options["has_https_access"] == "1" ) ) {
+                $metadata_arr[] = '<meta property="og:image:secure_url" content="' . esc_url_raw( str_replace('http:', 'https:', $options["default_image_url"] ) ) . '" />';
+            }
+        }
+
+
+    // Category, Tag, Taxonomy archives
+    } elseif ( is_category() || is_tag() || is_tax() ) {
+        // Taxonomy term object.
+        // When viewing taxonomy archives, the $post object is the taxonomy term object. Check with: var_dump($post);
+        $tax_term_object = $post;
+        //var_dump($tax_term_object);
+
+        // Type
+        $metadata_arr[] = '<meta property="og:type" content="website" />';
+        // Site Name
+        $metadata_arr[] = '<meta property="og:site_name" content="' . esc_attr( get_bloginfo('name') ) . '" />';
+        // Title - Note: Contains multipage information through amt_process_paged()
+        $metadata_arr[] = '<meta property="og:title" content="' . esc_attr( amt_process_paged( single_term_title( $prefix = '', $display = false ) ) ) . '" />';
+        // URL - Note: different method to get the permalink on paged archives
+        $url = get_term_link($tax_term_object);
+        if ( is_paged() ) {
+            $url = trailingslashit( $url ) . get_query_var('paged') . '/';
+        }
+        $metadata_arr[] = '<meta property="og:url" content="' . esc_url_raw( $url ) . '" />';
+        // Description
+        // If set, the description of the custom taxonomy term is used in the 'description' metatag.
+        // Otherwise, a generic description is used.
+        // Here we sanitize the provided description for safety
+        $description_content = sanitize_text_field( amt_sanitize_description( term_description( $tax_term_object->term_id ) ) );
+        // Note: Contains multipage information through amt_process_paged()
+        if ( empty( $description_content ) ) {
+            // Add a filtered generic description.
+            // Filter name
+            if ( is_category() ) {
+                $generic_description = apply_filters( 'amt_generic_description_category_archive', __('Content filed under the %s category.', 'add-meta-tags') );
+            } elseif ( is_tag() ) {
+                $generic_description = apply_filters( 'amt_generic_description_tag_archive', __('Content tagged with %s.', 'add-meta-tags') );
+            } elseif ( is_tax() ) {
+                // Construct the filter name. Template: ``amt_generic_description_TAXONOMYSLUG_archive``
+                $taxonomy_description_filter_name = sprintf( 'amt_generic_description_%s_archive', $tax_term_object->taxonomy);
+                // var_dump($taxonomy_description_filter_name);
+                // Generic description
+                $generic_description = apply_filters( $taxonomy_description_filter_name, __('Content filed under the %s taxonomy.', 'add-meta-tags') );
+            }
+            // Final generic description
+            $generic_description = sprintf( $generic_description, single_term_title( $prefix='', $display=false ) );
+            $metadata_arr[] = '<meta property="og:description" content="' . esc_attr( amt_process_paged( $generic_description ) ) . '" />';
+        } else {
+            $metadata_arr[] = '<meta property="og:description" content="' . esc_attr( amt_process_paged( $description_content ) ) . '" />';
+        }
+        // Locale
+        $metadata_arr[] = '<meta property="og:locale" content="' . esc_attr( str_replace('-', '_', amt_get_language_site()) ) . '" />';
+        // Site Image
+        // Image. Use a user defined image via filter. Otherwise use default image.
+        // Construct the filter name. Template: ``amt_taxonomy_TAXONOMYSLUG_TERMSLUG_image_url``
+        $taxonomy_image_url_filter_name = sprintf( 'amt_taxonomy_image_url_%s_%s', $tax_term_object->taxonomy, $tax_term_object->slug);
+        //var_dump($taxonomy_image_url_filter_name);
+        // The default image, if set, is used by default.
+        $taxonomy_image_url = apply_filters( $taxonomy_image_url_filter_name, $options["default_image_url"] );
+        if ( ! empty( $taxonomy_image_url ) ) {
+            $metadata_arr[] = '<meta property="og:image" content="' . esc_url_raw( $taxonomy_image_url ) . '" />';
+            if ( is_ssl() || ( ! is_ssl() && $options["has_https_access"] == "1" ) ) {
+                $metadata_arr[] = '<meta property="og:image:secure_url" content="' . esc_url_raw( str_replace('http:', 'https:', $taxonomy_image_url ) ) . '" />';
+            }
         }
 
 
@@ -367,14 +441,17 @@ function amt_add_opengraph_metadata_head( $post, $attachments, $embedded_media, 
         if ( 'image' == $attachment_type ) {
 
             // Allow filtering of the image size.
-            $image_size = apply_filters( 'amt_image_size_attachment', 'large' );
-            $metadata_arr = array_merge( $metadata_arr, amt_get_opengraph_image_metatags( $post->ID, $size=$image_size ) );
+            $image_size = apply_filters( 'amt_image_size_attachment', 'full' );
+            $metadata_arr = array_merge( $metadata_arr, amt_get_opengraph_image_metatags( $options, $post->ID, $size=$image_size ) );
 
         } elseif ( 'video' == $attachment_type ) {
             
             // Video tags
             $metadata_arr[] = '<meta property="og:video" content="' . esc_url_raw( wp_get_attachment_url($post->ID) ) . '" />';
-            //$metadata_arr[] = '<meta property="og:video:secure_url" content="' . esc_url_raw( str_replace('http:', 'https:', $main_size_meta[0]) ) . '" />';
+            if ( is_ssl() || ( ! is_ssl() && $options["has_https_access"] == "1" ) ) {
+                $metadata_arr[] = '<meta property="og:video:secure_url" content="' . esc_url_raw( str_replace('http:', 'https:', wp_get_attachment_url($post->ID)) ) . '" />';
+            }
+            //
             //$metadata_arr[] = '<meta property="og:video:width" content="' . esc_attr( $main_size_meta[1] ) . '" />';
             //$metadata_arr[] = '<meta property="og:video:height" content="' . esc_attr( $main_size_meta[2] ) . '" />';
             $metadata_arr[] = '<meta property="og:video:type" content="' . esc_attr( $mime_type ) . '" />';
@@ -383,7 +460,9 @@ function amt_add_opengraph_metadata_head( $post, $attachments, $embedded_media, 
             
             // Audio tags
             $metadata_arr[] = '<meta property="og:audio" content="' . esc_url_raw( wp_get_attachment_url($post->ID) ) . '" />';
-            //$metadata_arr[] = '<meta property="og:audio:secure_url" content="' . esc_url_raw( str_replace('http:', 'https:', $main_size_meta[0]) ) . '" />';
+            if ( is_ssl() || ( ! is_ssl() && $options["has_https_access"] == "1" ) ) {
+                $metadata_arr[] = '<meta property="og:audio:secure_url" content="' . esc_url_raw( str_replace('http:', 'https:', wp_get_attachment_url($post->ID)) ) . '" />';
+            }
             $metadata_arr[] = '<meta property="og:audio:type" content="' . esc_attr( $mime_type ) . '" />';
         }
 
@@ -458,8 +537,8 @@ function amt_add_opengraph_metadata_head( $post, $attachments, $embedded_media, 
         // Image
         if ( function_exists('has_post_thumbnail') && has_post_thumbnail( $post->ID ) ) {
             // Allow filtering of the image size.
-            $image_size = apply_filters( 'amt_image_size_content', 'medium' );
-            $metadata_arr = array_merge( $metadata_arr, amt_get_opengraph_image_metatags( get_post_thumbnail_id( $post->ID ), $size=$image_size ) );
+            $image_size = apply_filters( 'amt_image_size_content', 'full' );
+            $metadata_arr = array_merge( $metadata_arr, amt_get_opengraph_image_metatags( $options, get_post_thumbnail_id( $post->ID ), $size=$image_size ) );
             // Finally, set the $featured_image_id
             $featured_image_id = get_post_thumbnail_id( $post->ID );
             // Images have been found.
@@ -481,8 +560,8 @@ function amt_add_opengraph_metadata_head( $post, $attachments, $embedded_media, 
 
                     // Image tags
                     // Allow filtering of the image size.
-                    $image_size = apply_filters( 'amt_image_size_content', 'medium' );
-                    $metadata_arr = array_merge( $metadata_arr, amt_get_opengraph_image_metatags( $attachment->ID, $size=$image_size ) );
+                    $image_size = apply_filters( 'amt_image_size_content', 'full' );
+                    $metadata_arr = array_merge( $metadata_arr, amt_get_opengraph_image_metatags( $options, $attachment->ID, $size=$image_size ) );
 
                     // Images have been found.
                     $has_images = true;
@@ -491,7 +570,9 @@ function amt_add_opengraph_metadata_head( $post, $attachments, $embedded_media, 
                     
                     // Video tags
                     $metadata_arr[] = '<meta property="og:video" content="' . esc_url_raw( wp_get_attachment_url($attachment->ID) ) . '" />';
-                    //$metadata_arr[] = '<meta property="og:video:secure_url" content="' . esc_url_raw( str_replace('http:', 'https:', $main_size_meta[0]) ) . '" />';
+                    if ( is_ssl() || ( ! is_ssl() && $options["has_https_access"] == "1" ) ) {
+                        $metadata_arr[] = '<meta property="og:video:secure_url" content="' . esc_url_raw( str_replace('http:', 'https:', wp_get_attachment_url($attachment->ID)) ) . '" />';
+                    }
                     //$metadata_arr[] = '<meta property="og:video:width" content="' . esc_attr( $main_size_meta[1] ) . '" />';
                     //$metadata_arr[] = '<meta property="og:video:height" content="' . esc_attr( $main_size_meta[2] ) . '" />';
                     $metadata_arr[] = '<meta property="og:video:type" content="' . esc_attr( $mime_type ) . '" />';
@@ -500,7 +581,9 @@ function amt_add_opengraph_metadata_head( $post, $attachments, $embedded_media, 
                     
                     // Audio tags
                     $metadata_arr[] = '<meta property="og:audio" content="' . esc_url_raw( wp_get_attachment_url($attachment->ID) ) . '" />';
-                    //$metadata_arr[] = '<meta property="og:audio:secure_url" content="' . esc_url_raw( str_replace('http:', 'https:', $main_size_meta[0]) ) . '" />';
+                    if ( is_ssl() || ( ! is_ssl() && $options["has_https_access"] == "1" ) ) {
+                        $metadata_arr[] = '<meta property="og:audio:secure_url" content="' . esc_url_raw( str_replace('http:', 'https:', wp_get_attachment_url($attachment->ID)) ) . '" />';
+                    }
                     $metadata_arr[] = '<meta property="og:audio:type" content="' . esc_attr( $mime_type ) . '" />';
                 }
 
@@ -539,9 +622,11 @@ function amt_add_opengraph_metadata_head( $post, $attachments, $embedded_media, 
         }
 
         // If no images have been found so far use the default image, if set.
-        // Scope BEGIN: ImageObject: http://schema.org/ImageObject
         if ( $has_images === false && ! empty( $options["default_image_url"] ) ) {
             $metadata_arr[] = '<meta property="og:image" content="' . esc_url_raw( $options["default_image_url"] ) . '" />';
+            if ( is_ssl() || ( ! is_ssl() && $options["has_https_access"] == "1" ) ) {
+                $metadata_arr[] = '<meta property="og:image:secure_url" content="' . esc_url_raw( str_replace('http:', 'https:', $options["default_image_url"] ) ) . '" />';
+            }
         }
 
         // og:referenced
@@ -641,7 +726,7 @@ function amt_add_opengraph_metadata_head( $post, $attachments, $embedded_media, 
  * provided post ID.
  * By default, returns metadata for the 'medium' sized version of the image.
  */
-function amt_get_opengraph_image_metatags( $post_id, $size='medium' ) {
+function amt_get_opengraph_image_metatags( $options, $post_id, $size='medium' ) {
     $metadata_arr = array();
     $image = get_post( $post_id );
     //$image_meta = wp_get_attachment_metadata( $image->ID );   // contains info about all sizes
@@ -650,7 +735,9 @@ function amt_get_opengraph_image_metatags( $post_id, $size='medium' ) {
     $main_size_meta = wp_get_attachment_image_src( $image->ID, $size );
     // Image tags
     $metadata_arr[] = '<meta property="og:image" content="' . esc_url_raw( $main_size_meta[0] ) . '" />';
-    //$metadata_arr[] = '<meta property="og:image:secure_url" content="' . esc_url_raw( str_replace('http:', 'https:', $main_size_meta[0]) ) . '" />';
+    if ( is_ssl() || ( ! is_ssl() && $options["has_https_access"] == "1" ) ) {
+        $metadata_arr[] = '<meta property="og:image:secure_url" content="' . esc_url_raw( str_replace('http:', 'https:', $main_size_meta[0]) ) . '" />';
+    }
     if ( apply_filters( 'amt_extended_image_tags', true ) ) {
         $metadata_arr[] = '<meta property="og:image:width" content="' . esc_attr( $main_size_meta[1] ) . '" />';
         $metadata_arr[] = '<meta property="og:image:height" content="' . esc_attr( $main_size_meta[2] ) . '" />';
