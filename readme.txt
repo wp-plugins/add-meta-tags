@@ -689,7 +689,7 @@ Please check out the changelog of each release by following the links below. You
  - New setting for locale that overrides the WordPress locale setting. (props to eduh12 for ideas and feedback)
  - New metabox feature: global image override. (props to eduh12 for ideas and feedback)
  - Filtering for default Twitter Card type. (props to KV92)
- - Added generic support for products. (received many requests. too many to mention here. thanks all!)
+ - Added generic support for products. More info at the description page. (received many requests. too many to mention here. thanks all!)
  - Fixed bug with extra comma in keywords when a post has no categories, no tags, but belongs to a custom taxonomy.
  - Updated translations.
 - [2.7.4](http://www.codetrax.org/versions/281)
