@@ -87,7 +87,10 @@ function amt_add_twitter_cards_metadata_head( $post, $attachments, $embedded_med
 
     $metadata_arr = array();
 
-    if ( ! is_singular() || is_front_page() || is_category() || is_tag() || is_tax() ) {  // is_front_page() is used for the case in which a static page is used as the front page.
+    if ( ! is_singular() || is_front_page() || is_category() || is_tag() || is_tax() ) {
+    // Note1: is_front_page() is used for the case in which a static page is used as the front page.
+    // Note2: product groups should pass the is_tax() validation, so no need for
+    // amt_is_product_group(). We do not support other product groups.
 
         // Default front page containing latest posts
         // Add a basic Twitter Card to the default home page that contains latest posts.
@@ -119,6 +122,8 @@ function amt_add_twitter_cards_metadata_head( $post, $attachments, $embedded_med
             }
 
         // Taxonomy archives
+        // Note: product groups should pass the is_tax() validation, so no need for
+        // amt_is_product_group(). We do not support other product groups.
         } elseif ( is_category() || is_tag() || is_tax() ) {
             // Taxonomy term object.
             // When viewing taxonomy archives, the $post object is the taxonomy term object. Check with: var_dump($post);
@@ -178,8 +183,85 @@ function amt_add_twitter_cards_metadata_head( $post, $attachments, $embedded_med
         return $metadata_arr;
     }
 
+
+    // Products
+    // A 'product' Twitter Card is generated. See: https://dev.twitter.com/cards/types/product
+    if ( amt_is_product() ) {
+
+        // Type
+        $metadata_arr[] = '<meta name="twitter:card" content="product" />';
+
+        // Author and Publisher
+        $metadata_arr = array_merge( $metadata_arr, amt_get_twitter_cards_author_publisher_metatags( $options, $post ) );
+
+        // Title
+        // Note: Contains multipage information through amt_process_paged()
+        $metadata_arr[] = '<meta name="twitter:title" content="' . esc_attr( amt_process_paged( get_the_title($post->ID) ) ) . '" />';
+
+        // Description - We use the description defined by Add-Meta-Tags
+        // Note: Contains multipage information through amt_process_paged()
+        $content_desc = amt_get_content_description($post);
+        if ( !empty($content_desc) ) {
+            $metadata_arr[] = '<meta name="twitter:description" content="' . esc_attr( amt_process_paged( $content_desc ) ) . '" />';
+        }
+
+        // Image
+        // Use the featured image or the default image as a fallback.
+
+        // Set to true if image meta tags have been added to the card, so that it does not
+        // search for any more images.
+        $image_metatags_added = false;
+
+        // First check if a global image override URL has been entered.
+        // If yes, use this image URL and override all other images.
+        $global_image_override_url = amt_get_post_meta_image_url($post->ID);
+        if ( $image_metatags_added === false && ! empty( $global_image_override_url ) ) {
+            $metadata_arr[] = '<meta name="twitter:image" content="' . esc_url_raw( $global_image_override_url ) . '" />';
+            // Images have been found.
+            $image_metatags_added = true;
+        }
+
+        // Set the image size to use
+        $image_size = apply_filters( 'amt_image_size_product', 'full' );
+
+        // If the content has a featured image, then we use it.
+        if ( $image_metatags_added === false && function_exists('has_post_thumbnail') && has_post_thumbnail($post->ID) ) {
+
+            $main_size_meta = wp_get_attachment_image_src( get_post_thumbnail_id($post->ID), $image_size );
+            $metadata_arr[] = '<meta name="twitter:image" content="' . esc_url_raw( $main_size_meta[0] ) . '" />';
+            if ( apply_filters( 'amt_extended_image_tags', true ) ) {
+                $metadata_arr[] = '<meta name="twitter:image:width" content="' . esc_attr( $main_size_meta[1] ) . '" />';
+                $metadata_arr[] = '<meta name="twitter:image:height" content="' . esc_attr( $main_size_meta[2] ) . '" />';
+            }
+
+            // Images have been found.
+            $image_metatags_added = true;
+
+        }
+
+        // If an image is still missing, then use the default image (if set).
+        if ( $image_metatags_added === false && ! empty( $options["default_image_url"] ) ) {
+            $metadata_arr[] = '<meta name="twitter:image" content="' . esc_url_raw( $options["default_image_url"] ) . '" />';
+        }
+
+        //
+        // The Product Twitter Card needs to be extended with the following required
+        // in order to be valid: label1, data1, label2, data2
+        //
+        // For instance:
+        //<meta name="twitter:label1" content="Genre">
+        //<meta name="twitter:data1" content="Classic Rock">
+        //<meta name="twitter:label2" content="Location">
+        //<meta name="twitter:data2" content="National">
+        //
+        // The following filter is provided.
+
+        // Filtering of the generated Twitter Cards metadata
+        $metadata_arr = apply_filters( 'amt_product_data_twitter_cards', $metadata_arr );
+
+
     // Attachments
-    if ( is_attachment() ) {
+    } elseif ( is_attachment() ) {
 
         $mime_type = get_post_mime_type( $post->ID );
         //$attachment_type = strstr( $mime_type, '/', true );
@@ -301,8 +383,17 @@ function amt_add_twitter_cards_metadata_head( $post, $attachments, $embedded_med
         // search for any more images.
         $image_metatags_added = false;
 
+        // First check if a global image override URL has been entered.
+        // If yes, use this image URL and override all other images.
+        $global_image_override_url = amt_get_post_meta_image_url($post->ID);
+        if ( $image_metatags_added === false && ! empty( $global_image_override_url ) ) {
+            $metadata_arr[] = '<meta name="twitter:image" content="' . esc_url_raw( $global_image_override_url ) . '" />';
+            // Images have been found.
+            $image_metatags_added = true;
+        }
+
         // If the content has a featured image, then we use it.
-        if ( function_exists('has_post_thumbnail') && has_post_thumbnail($post->ID) ) {
+        if ( $image_metatags_added === false && function_exists('has_post_thumbnail') && has_post_thumbnail($post->ID) ) {
 
             $main_size_meta = wp_get_attachment_image_src( get_post_thumbnail_id($post->ID), $image_size );
             $metadata_arr[] = '<meta name="twitter:image:src" content="' . esc_url_raw( $main_size_meta[0] ) . '" />';
@@ -400,35 +491,56 @@ function amt_add_twitter_cards_metadata_head( $post, $attachments, $embedded_med
             $metadata_arr[] = '<meta name="twitter:description" content="' . esc_attr( amt_process_paged( $content_desc ) ) . '" />';
         }
 
-        // Image counter
-        $k = 0;
+        // Image
 
-        // Process all attachments and add metatags for the first image
-        foreach( $attachments as $attachment ) {
+        // Set to true if image meta tags have been added to the card, so that it does not
+        // search for any more images.
+        $image_metatags_added = false;
 
-            $mime_type = get_post_mime_type( $attachment->ID );
-            //$attachment_type = strstr( $mime_type, '/', true );
-            // See why we do not use strstr(): http://www.codetrax.org/issues/1091
-            $attachment_type = preg_replace( '#\/[^\/]*$#', '', $mime_type );
+        // First check if a global image override URL has been entered.
+        // If yes, use this image URL and override all other images.
+        $global_image_override_url = amt_get_post_meta_image_url($post->ID);
+        if ( $image_metatags_added === false && ! empty( $global_image_override_url ) ) {
+            // Note 'image0'
+            $metadata_arr[] = '<meta name="twitter:image0" content="' . esc_url_raw( $global_image_override_url ) . '" />';
+            // Images have been found.
+            $image_metatags_added = true;
+        }
 
-            if ( 'image' == $attachment_type ) {
-                // Image tags
-                // Allow filtering of the image size.
-                $image_size = apply_filters( 'amt_image_size_content', 'full' );
-                $main_size_meta = wp_get_attachment_image_src( $attachment->ID, $image_size );
-                $metadata_arr[] = '<meta name="twitter:image' . $k . '" content="' . esc_url_raw( $main_size_meta[0] ) . '" />';
+        // Build the gallery
+        if ( $image_metatags_added === false ) {
+
+            // Image counter
+            $k = 0;
+
+            // Process all attachments and add metatags for the first image
+            foreach( $attachments as $attachment ) {
+
+                $mime_type = get_post_mime_type( $attachment->ID );
+                //$attachment_type = strstr( $mime_type, '/', true );
+                // See why we do not use strstr(): http://www.codetrax.org/issues/1091
+                $attachment_type = preg_replace( '#\/[^\/]*$#', '', $mime_type );
+
+                if ( 'image' == $attachment_type ) {
+                    // Image tags
+                    // Allow filtering of the image size.
+                    $image_size = apply_filters( 'amt_image_size_content', 'full' );
+                    $main_size_meta = wp_get_attachment_image_src( $attachment->ID, $image_size );
+                    $metadata_arr[] = '<meta name="twitter:image' . $k . '" content="' . esc_url_raw( $main_size_meta[0] ) . '" />';
+
+                    // Increment the counter
+                    $k++;
+                }
+            }
+
+            // Embedded Media
+            foreach( $embedded_media['images'] as $embedded_item ) {
+                $metadata_arr[] = '<meta name="twitter:image' . $k . '" content="' . esc_url_raw( $embedded_item['image'] ) . '" />';
 
                 // Increment the counter
                 $k++;
             }
-        }
 
-        // Embedded Media
-        foreach( $embedded_media['images'] as $embedded_item ) {
-            $metadata_arr[] = '<meta name="twitter:image' . $k . '" content="' . esc_url_raw( $embedded_item['image'] ) . '" />';
-
-            // Increment the counter
-            $k++;
         }
 
 
@@ -494,16 +606,22 @@ function amt_add_twitter_cards_metadata_head( $post, $attachments, $embedded_med
                 $metadata_arr[] = sprintf( '<meta name="twitter:player:width" content="%d" />', esc_attr( $player_size[0] ) );
                 // twitter:player:height
                 $metadata_arr[] = sprintf( '<meta name="twitter:player:height" content="%d" />', esc_attr( $player_size[1] ) );
-                // twitter:image
-                $preview_image_url = amt_embed_get_preview_image( $attachment->ID );
-                if ( ! empty( $preview_image_url ) ) {
-                    $metadata_arr[] = '<meta name="twitter:image" content="' . esc_url_raw( amt_make_https( $preview_image_url ) ) . '" />';
-                }
                 // twitter:player:stream
                 $metadata_arr[] = '<meta name="twitter:player:stream" content="' . esc_url_raw( amt_make_https( amt_embed_get_stream_url( $attachment->ID ) ) ) . '" />';
                 // twitter:player:stream:content_type
                 $metadata_arr[] = '<meta name="twitter:player:stream:content_type" content="' . esc_attr( $mime_type ) . '" />';
                 //$metadata_arr[] = '<meta name="twitter:player:stream:content_type" content="video/mp4; codecs=&quot;avc1.42E01E1, mp4a.40.2&quot;">';
+                // twitter:image
+                $global_image_override_url = amt_get_post_meta_image_url($post->ID);
+                $preview_image_url = amt_embed_get_preview_image( $attachment->ID );
+                // First check if a global image override URL has been set in the post's metabox.
+                // If yes, use this image URL and override all other images.
+                if ( ! empty( $global_image_override_url ) ) {
+                    $metadata_arr[] = '<meta name="twitter:image" content="' . esc_url_raw( $global_image_override_url ) . '" />';
+                // Else use the attachment's featured image, if set.
+                } elseif ( ! empty( $preview_image_url ) ) {
+                    $metadata_arr[] = '<meta name="twitter:image" content="' . esc_url_raw( amt_make_https( $preview_image_url ) ) . '" />';
+                }
 
                 $audio_video_metatags_complete = true;
 
@@ -555,7 +673,13 @@ function amt_add_twitter_cards_metadata_head( $post, $attachments, $embedded_med
                 // twitter:player:height
                 $metadata_arr[] = sprintf( '<meta name="twitter:player:height" content="%d" />', esc_attr( $embedded_item['height'] ) );
                 // twitter:image
-                if ( ! empty( $embedded_item['thumbnail'] ) ) {
+                $global_image_override_url = amt_get_post_meta_image_url($post->ID);
+                // First check if a global image override URL has been set in the post's metabox.
+                // If yes, use this image URL and override all other images.
+                if ( ! empty( $global_image_override_url ) ) {
+                    $metadata_arr[] = '<meta name="twitter:image" content="' . esc_url_raw( $global_image_override_url ) . '" />';
+                // Else use the discovered preview image, if any.
+                } elseif ( ! empty( $embedded_item['thumbnail'] ) ) {
                     $metadata_arr[] = '<meta name="twitter:image" content="' . esc_url_raw( $embedded_item['thumbnail'] ) . '" />';
                 }
 

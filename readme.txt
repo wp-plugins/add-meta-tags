@@ -1,10 +1,10 @@
 === Add Meta Tags ===
 Contributors: gnotaras
 Donate link: http://bit.ly/HvUakt
-Tags: amt, meta, metadata, seo, optimize, ranking, description, keywords, metatag, schema, opengraph, dublin core, schema.org, microdata, google, twitter cards, google plus, yahoo, bing, search engine optimization, rich snippets, semantic, structured, meta tags
+Tags: amt, meta, metadata, seo, optimize, ranking, description, keywords, metatag, schema, opengraph, dublin core, schema.org, microdata, google, twitter cards, google plus, yahoo, bing, search engine optimization, rich snippets, semantic, structured, meta tags, product
 Requires at least: 3.1.0
 Tested up to: 4.2
-Stable tag: 2.7.4
+Stable tag: 2.8.0
 License: Apache License v2
 License URI: http://www.apache.org/licenses/LICENSE-2.0.txt
 
@@ -15,13 +15,16 @@ Add basic meta tags and also Opengraph, Schema.org Microdata, Twitter Cards and 
 
 *Add-Meta-Tags* (<abbr title="Add-Meta-Tags Wordpress plugin">AMT</abbr>) adds metadata to your content, including the basic *description* and *keywords* meta tags, [Opengraph](http://ogp.me "Opengraph specification"), [Schema.org](http://schema.org/ "Schema.org Specification"), [Twitter Cards](https://dev.twitter.com/docs/cards "Twitter Cards Specification") and [Dublin Core](http://dublincore.org "Dublin Core Metadata Initiative") metadata. It is actively maintained since 2006 (historical [Add-Meta-Tags home](http://www.g-loaded.eu/2006/01/05/add-meta-tags-wordpress-plugin/ "Official historical Add-Meta-Tags Homepage")).
 
+*Add-Meta-Tags* is one of the personal software projects of George Notaras. It is developed in his free time and provided to you as Free software. Although the development is not donation driven, donations in the form of appreciation of the effort and overall hard work are much appreciated.
+
 
 = Goals =
 
 The goals of the Add-Meta-Tags plugin are:
 
-- provide efficient, out-of-the-box search engine optimization (*SEO*) on a web site powered by WordPress.
-- be customizable, yet simple and easy to use and configure with minimal or no support.
+- be a free, yet high quality, metadata extension for the WordPress publishing platform.
+- provide efficient, out-of-the-box search engine optimization (*SEO*).
+- be customizable, yet simple and easy to use and configure, with minimal or no support.
 - be as lightweight as possible.
 - support advanced customization through the WordPress filter/action system (for developers and advanced users).
 
@@ -35,7 +38,6 @@ However, a significant amount of **time** and **energy** has been put into devel
 Donations in the following crypto currencies are also accepted and welcome. Send coins to the following addresses:
 
 - BitCoin (BTC): `1KkgpmaBKqQVk643VRhFRkL19Bbci4Mwn9`
-- LiteCoin (LTC): `LS8UF39LfLahzGo49y736ooRYBVT1zZ2Fa`
 
 Thank you in advance for **donating**!
 
@@ -195,6 +197,11 @@ Here is what is supported:
 
 This feature should be considered experimental. This information might be changed in future versions of the plugin.
 
+= Metadata for products =
+
+Add-Meta-Tags, since v2.8.0, supports the generation of OpenGraph, Schema.org and Twitter Cards metadata for products. Upcoming releases (2.8.1 and newer) will have internal support for *WooCommerce* and *Easy-Digital-Downloads*.
+
+Generic product support is also provided by the various product related filter hooks which can be used to easily detect product and product group pages and provide the product specific OpenGraph, Schema.org or Twitter Cards meta tags. Please check example 12 below for more information.
 
 = Translations =
 
@@ -468,6 +475,85 @@ add_filter( 'amt_twitter_cards_video_player_size', 'amt_custom_twitter_cards_vid
 `
 This code can be placed inside your theme's `functions.php` file.
 
+**Example 12**: Generate product specific metadata.
+
+The following code assumes that e-commerce functionality is added by a plugin named **xcom** and aims to be an example about how to add Twitter Cards, Opengraph and Schema.org metadata to your product pages.
+
+`
+// Conditional tag that is true when our product page is displayed.
+// If such a conditional tag is provided by the e-commerce solution,
+// defining such a function is entirely optional.
+function is_xcom_product() {
+    // Check if xcom product page and return true;
+}
+
+// Conditional tag that is true when our product group page is displayed.
+// If such a conditional tag is provided by the e-commerce solution,
+// defining such a function is entirely optional.
+function is_xcom_product_group() {
+    // Check if xcom product group page and return true;
+}
+
+// Product page detection for Add-Meta-Tags
+function amt_detect_xcom_product() {
+    if ( is_xcom_product() ) {
+        return true;
+    }
+    return false;
+}
+add_filter( 'amt_is_product', 'amt_detect_xcom_product' );
+
+// Product group page detection for Add-Meta-Tags
+function amt_detect_xcom_product_group() {
+    if ( is_xcom_product_group() ) {
+        return true;
+    }
+    return false;
+}
+add_filter( 'amt_is_product_group', 'amt_detect_xcom_product_group' );
+
+// Twitter Cards for xcom products
+function amt_product_data_tc_xcom( $metatags ) {
+    if ( ! is_xcom_product() ) {
+        return $metatags;
+    }
+    $metatags[] = '<meta name="twitter:label1" content="Genre" />';
+    $metatags[] = '<meta name="twitter:data1" content="Classic Rock" />';
+    $metatags[] = '<meta name="twitter:label2" content="Location" />';
+    $metatags[] = '<meta name="twitter:data2" content="National" />';
+    return $metatags;
+}
+add_filter( 'amt_product_data_twitter_cards', 'amt_product_data_tc_xcom' );
+
+// Opengraph for xcom products
+function amt_product_data_og_xcom( $metatags ) {
+    if ( ! is_xcom_product() ) {
+        return $metatags;
+    }
+    $metatags[] = '<meta property="product:price:amount" content="0.30" />';
+    $metatags[] = '<meta property="product:price:currency" content="USD" />';
+    $metatags[] = '<meta property="product:price:amount" content="0.20" />';
+    $metatags[] = '<meta property="product:price:currency" content="GBP" />';
+    return $metatags;
+}
+add_filter( 'amt_product_data_opengraph', 'amt_product_data_og_xcom' );
+
+// Schema.org for xcom products
+function amt_product_data_schemaorg_xcom( $metatags ) {
+    if ( ! is_xcom_product() ) {
+        return $metatags;
+    }
+    $metatags[] = '<meta itemprop="productID" content="isbn:123-456-789" />';
+    $metatags[] = '<meta itemprop="priceCurrency" content="USD" />';
+    $metatags[] = '<meta itemprop="price" content="100.00" />';
+    return $metatags;
+}
+add_filter( 'amt_product_data_schemaorg', 'amt_product_data_schemaorg_xcom' );
+`
+This code can be placed inside your theme's `functions.php` file.
+
+Note that upcoming releases of Add-Meta-Tags will have internal support for *WooCommerce* and *Easy-Digital-Downloads* e-commerce plugins.
+
 
 = Custom Fields =
 
@@ -478,6 +564,7 @@ Add-Meta-Tags uses the following internal custom fields to store data related to
 * `_amt_title` - the content's custom title.
 * `_amt_news_keywords` - the content's custom news keywords.
 * `_amt_full_metatags` - the content's full meta tag code.
+* `_amt_image_url` - URL of an image that overrides all other content images.
 * `_amt_referenced_list` - list of URLs of items referenced in the post.
 
 The contact methods added by Add-Meta-Tags are:
@@ -530,9 +617,23 @@ No special requirements when upgrading.
 
 == Frequently Asked Questions ==
 
-= There is no amount set in the donation form! How much should I donate? =
+= Plugin X displays a warning about Add-Meta-Tags being incompatible! What should I do? =
 
-The amount of the donation is totally up to you. You can think of it like this: Are you happy with the plugin? Do you think it makes your life easier or adds value to your web site? If this is a yes and, if you feel like showing your appreciation, you could imagine buying me a cup of coffee at your favorite Cafe and <a href="http://bit.ly/HvUakt">make a donation</a> accordingly.
+Add-Meta-Tags is compatible with every plugin available for WordPress. It never affects the functionality of other plugins in any way.
+
+Please read our <a title="Add-Meta-Tags Compatibility Notice" href="https://wordpress.org/support/topic/compatibility-notice-apr-09-2015">Compatibility Notice</a>. Also, check out our <a href="https://wordpress.org/support/topic/about-the-warnings-issued-by-3rd-party-plugins-for-add-meta-tags-apr-11-2015">message</a> about warnings issued by 3rd parties.
+
+= I see duplicate meta tags in the HTML source! =
+
+Add-Meta-Tags does not generate duplicate meta tags. Moreover, it does not check the HTML head area for duplicate meta tags. This is the responsibility of the user. Please make sure no meta tags are hardcoded into your theme (usually the `header.php` template). Also, if you use multiple SEO plugins, make sure that similar features, eg Twitter Cards metadata, is not enabled in both plugins.
+
+= The blog title appears in the 'title' HTML element even if a custom title has been set! =
+
+Most probably this issue is related to your theme. Please try to reproduce the same behavior using one of the default themes. If it is reproducible, please let me know about it in the forums.
+
+= Metadata validation tools show the error [Error: Missing required field "updated"]! =
+
+This is an issue related to <a title="Microformats Specification" href="http://microformats.org/">Microformats</a> metadata, which is hard-coded into the theme. It is not related to Schema.org microdata and also not related to Add-Meta-Tags.
 
 = My meta tags do not show up! =
 
@@ -554,9 +655,17 @@ Keep in mind that in order to get helpful answers and eventually solve any probl
 
 Also, my email can be found in the `add-meta-tags.php` file. If possible, I'll help. Please note that it may take a while to get back to you.
 
+= I want to request a new feature! =
+
+Please, feel free to post your request in the forums. Please be descriptive! Providing **detailed feedback** about the requested feature is the best way to contribute.
+
 = Is there a bug tracker? =
 
 You can find the bug tracker at the [Add-Meta-Tags Development web site](http://www.codetrax.org/projects/wp-add-meta-tags).
+
+= There is no amount set in the donation form! How much should I donate? =
+
+The amount of the donation is totally up to you. You can think of it like this: Are you happy with the plugin? Do you think it makes your life easier or adds value to your web site? If this is a yes and, if you feel like showing your appreciation, you could imagine buying me a cup of coffee at your favorite Cafe and <a href="http://bit.ly/HvUakt">make a donation</a> accordingly.
 
 
 == Screenshots ==
@@ -573,6 +682,16 @@ Screenshots as of v2.4.0
 
 Please check out the changelog of each release by following the links below. You can also check the [roadmap](http://www.codetrax.org/projects/wp-add-meta-tags/roadmap "Add-Meta-Tags Roadmap") regarding future releases of the plugin.
 
+- [2.8.0](http://www.codetrax.org/versions/192)
+ - Updated the FAQ section.
+ - More default image URL adjustments for SSL connections.
+ - Improved Schema.org customization via filters. (props to Richard D'Angelo for ideas and feedback)
+ - New setting for locale that overrides the WordPress locale setting. (props to eduh12 for ideas and feedback)
+ - New metabox feature: global image override. (props to eduh12 for ideas and feedback)
+ - Filtering for default Twitter Card type. (props to KV92)
+ - Added generic support for products. (received many requests. too many to mention here. thanks all!)
+ - Fixed bug with extra comma in keywords when a post has no categories, no tags, but belongs to a custom taxonomy.
+ - Updated translations.
 - [2.7.4](http://www.codetrax.org/versions/281)
 - [2.7.3](http://www.codetrax.org/versions/231)
  - Fixed bug with the sanitization of the publisher's Twitter username.
@@ -707,6 +826,15 @@ Please check out the changelog of each release by following the links below. You
 - [0.1](http://www.codetrax.org/versions/25)
 
 
+== Contributions ==
+
+Add-Meta-Tags is Free software. Contributions in form of source code, feedback or money donations are more than welcome.
+
+One of the project goals is to keep Add-Meta-Tags as simple as possible. Requests for new features must be accompanied by detailed information about the problems the new feature would resolve.
+
+For source code contributions, please see below.
+
+
 == How to contribute code ==
 
 This section contains information about how to contribute code to this project.
@@ -736,9 +864,9 @@ Using Mercurial:
 `
 hg clone https://bitbucket.org/gnotaras/wordpress-add-meta-tags
 cd wordpress-add-meta-tags
-# ... make changes ...
+ ... make changes ...
 hg commit -m "fix for bug"
-# create a patch for the last commit
+ ... create a patch for the last commit ...
 hg export --git tip > bug-fix.patch
 `
 
@@ -747,7 +875,7 @@ Using Git:
 `
 git clone https://github.com/gnotaras/wordpress-add-meta-tags
 cd wordpress-add-meta-tags
-# ... make changes to add-meta-tags.php or other file ...
+ ... make changes to add-meta-tags.php or other file ...
 git add add-meta-tags.php
 git commit -m "my fix"
 git show > bug-fix.patch
@@ -758,7 +886,7 @@ Using SVN:
 `
 svn co http://plugins.svn.wordpress.org/add-meta-tags/trunk/ add-meta-tags-trunk
 cd add-meta-tags-trunk
-# ... make changes ...
+ ... make changes ...
 svn diff > bug-fix.patch
 `
 

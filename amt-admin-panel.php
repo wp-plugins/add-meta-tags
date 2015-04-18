@@ -517,6 +517,11 @@ function amt_options_page() {
                 '.__('Full meta tags box.', 'add-meta-tags').'
                 </label></p>
 
+                <p><input id="metabox_enable_image_url" type="checkbox" value="1" name="metabox_enable_image_url" '. (($options["metabox_enable_image_url"]=="1") ? 'checked="checked"' : '') .'" />
+                <label for="metabox_enable_image_url">
+                '.__('Global image override.', 'add-meta-tags').'
+                </label></p>
+
                 <p><input id="metabox_enable_referenced_list" type="checkbox" value="1" name="metabox_enable_referenced_list" '. (($options["metabox_enable_referenced_list"]=="1") ? 'checked="checked"' : '') .'" />
                 <label for="metabox_enable_referenced_list">
                 '.__('Referenced items. (Experimental feature. Not recommended.)', 'add-meta-tags').'
@@ -572,6 +577,23 @@ function amt_options_page() {
                 '.__('Author based archives.', 'add-meta-tags').' ('.__('Even if checked, the first page of this type of archive is always indexed.', 'add-meta-tags').')
                 </label></p>
 
+                <br />
+            </fieldset>
+            </td>
+            </tr>
+
+            <tr valign="top">
+            <th scope="row">'.__('Locale', 'add-meta-tags').'</th>
+            <td>
+            <fieldset>
+                <legend class="screen-reader-text"><span>'.__('Locale', 'add-meta-tags').'</span></legend>
+
+                <input name="global_locale" type="text" id="global_locale" class="code" value="' . esc_attr( stripslashes( $options["global_locale"] ) ) . '" size="10" maxlength="24" />
+                <br />
+                <label for="global_locale">
+                '.__('Enter a locale which will be used globally in the generated metadata overriding the default locale as returned by WordPress. Filling in this setting is only recommended if WordPress does not return a locale in the form of <code>language_TERRITORY</code>.', 'add-meta-tags').'
+                </label>
+                <p><strong>'.__('Example', 'add-meta-tags').'</strong>: <code>en_US</code></p>
                 <br />
             </fieldset>
             </td>
@@ -973,6 +995,27 @@ function amt_inner_metadata_box( $post ) {
     }
 
 
+    // Image URL (global override)
+    
+    // 'image_url' box permission check (can be user customized via filter).
+    if ( $options['metabox_enable_image_url'] == '1' && current_user_can( $metabox_permissions['image_url_box_capability'] ) ) {
+        $metabox_has_features = true;
+
+        // Retrieve the field data from the database.
+        $custom_image_url_value = amt_get_post_meta_image_url( $post->ID );
+
+        print('
+            <p>
+                <label for="amt_custom_image_url"><strong>'.__('Image URL', 'add-meta-tags').'</strong>:</label>
+                <input type="text" class="code" style="width: 99%" id="amt_custom_image_url" name="amt_custom_image_url" value="' . esc_attr( stripslashes( $custom_image_url_value ) ) . '" />
+                <br>
+                '.__('Enter an image URL to override all other images of the content.', 'add-meta-tags').'
+            </p>
+        ');
+
+    }
+
+
     // List of URLs of items referenced in the post.
 
     // Referenced items box permission check (can be user customized via filter).
@@ -1072,6 +1115,10 @@ function amt_save_postdata( $post_id, $post ) {
     if ( isset( $_POST['amt_custom_full_metatags'] ) ) {
         $full_metatags_value = esc_textarea( wp_kses( stripslashes( $_POST['amt_custom_full_metatags'] ), amt_get_allowed_html_kses() ) );
     }
+    // Image URL
+    if ( isset( $_POST['amt_custom_image_url'] ) ) {
+        $image_url_value = esc_url_raw( stripslashes( $_POST['amt_custom_image_url'] ) );
+    }
     // List of referenced items - We allow no HTML elements.
     if ( isset( $_POST['amt_custom_referenced_list'] ) ) {
         $referenced_list_value = esc_textarea( wp_kses( stripslashes( $_POST['amt_custom_referenced_list'] ), array() ) );
@@ -1086,6 +1133,7 @@ function amt_save_postdata( $post_id, $post ) {
     $amt_title_field_name = '_amt_title';
     $amt_newskeywords_field_name = '_amt_news_keywords';
     $amt_full_metatags_field_name = '_amt_full_metatags';
+    $amt_image_url_field_name = '_amt_image_url';
     $amt_referenced_list_field_name = '_amt_referenced_list';
 
     // As an extra security measure, here we also check the user-defined per box
@@ -1141,6 +1189,15 @@ function amt_save_postdata( $post_id, $post ) {
             delete_post_meta($post_id, $amt_full_metatags_field_name);
         } else {
             update_post_meta($post_id, $amt_full_metatags_field_name, $full_metatags_value);
+        }
+    }
+
+    // Image URL
+    if ( $options['metabox_enable_image_url'] == '1' && current_user_can( $metabox_permissions['image_url_box_capability'] ) ) {
+        if ( empty($image_url_value) ) {
+            delete_post_meta($post_id, $amt_image_url_field_name);
+        } else {
+            update_post_meta($post_id, $amt_image_url_field_name, $image_url_value);
         }
     }
 

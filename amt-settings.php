@@ -54,7 +54,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 function amt_get_default_options() {
     return array(
-        "settings_version"  => 9,       // IMPORTANT: SETTINGS UPGRADE: Every time settings are added or removed this has to be incremented.
+        "settings_version"  => 10,       // IMPORTANT: SETTINGS UPGRADE: Every time settings are added or removed this has to be incremented.
         "site_description"  => "",      // Front page description
         "site_keywords"     => "",      // Front page keywords
         "global_keywords"   => "",      // These keywords are added to the 'keywords' meta tag on all posts and pages
@@ -79,12 +79,14 @@ function amt_get_default_options() {
         "metabox_enable_title"           => "1",
         "metabox_enable_news_keywords"   => "0",
         "metabox_enable_full_metatags"   => "0",
+        "metabox_enable_image_url"   => "0",
         "metabox_enable_referenced_list" => "0",
         "social_main_facebook_publisher_profile_url" => "",
         //"social_main_facebook_app_id" => "",
         //"social_main_facebook_admins" => "",
         "social_main_googleplus_publisher_profile_url" => "",
         "social_main_twitter_publisher_username" => "",
+        "global_locale" => "",
         "has_https_access" => "0",
         "copyright_url"     => "",
         "default_image_url" => "",
@@ -180,6 +182,11 @@ function amt_plugin_upgrade() {
     // Version 2.7.3 (settings_version 8->9)
     // Added "has_https_access"
     // Added "tc_enforce_summary_large_image"
+    // No migrations required. Addition takes place in (1).
+
+    // Version 2.7.5 (settings_version 9->10)
+    // Added "global_locale"
+    // Added "metabox_enable_image_url"
     // No migrations required. Addition takes place in (1).
 
     // 3) Clean stored options.
