@@ -401,6 +401,12 @@ function amt_options_page() {
                 <input id="auto_opengraph" type="checkbox" value="1" name="auto_opengraph" '. (($options["auto_opengraph"]=="1") ? 'checked="checked"' : '') .'" />
                 <label for="auto_opengraph">'.__('Automatically generate Opengraph meta tags.', 'add-meta-tags').'</label>
                 <p>'.__('If this option is enabled, Opengraph metadata is automatically generated for content, attachments and archives. For more information, please refer to the <a href="http://ogp.me">Opengraph specification</a>.', 'add-meta-tags').'</p>
+                <br />
+
+                <input id="og_omit_video_metadata" type="checkbox" value="1" name="og_omit_video_metadata" '. (($options["og_omit_video_metadata"]=="1") ? 'checked="checked"' : '') .'" />
+                <label for="og_omit_video_metadata">'.__('Omit <code>og:video</code> meta tags.', 'add-meta-tags').'</label>
+                <p>'.__('When a post containing a video is shared on Facebook, Facebook uses its own player to embed the video in the timeline. If this setting is enabled, <code>og:video</code> meta tags are no longer generated and Facebook, instead of embedding your video, links to your actual video post.', 'add-meta-tags').'</p>
+                <br />
 
                 <h4>'.__('Important Note', 'add-meta-tags').'</h4>
 
@@ -606,7 +612,7 @@ function amt_options_page() {
                 <legend class="screen-reader-text"><span>'.__('Secure Access', 'add-meta-tags').'</span></legend>
 
                 <input id="has_https_access" type="checkbox" value="1" name="has_https_access" '. (($options["has_https_access"]=="1") ? 'checked="checked"' : '') .'" />
-                <label for="has_https_access">'.__('Content and media are accessible over HTTPS.').'</label>
+                <label for="has_https_access">'.__('Media are accessible over HTTPS.').'</label>
                 <p>'.__('Currently this option, if enabled, lets the plugin make decisions about whether to generate additional secure links even if the active connection does not use HTTPS. For instance, if the web site is accessed over HTTP and this options is enabled, additional <code>og:image:secure_url</code> meta tags will be generated for your local media. If the current connection uses HTTPS, then secure links are always generated.', 'add-meta-tags').'</p>
                 <br />
             </fieldset>
@@ -642,6 +648,31 @@ function amt_options_page() {
                 '.__('Enter an absolute URL to an image that represents your website, for instance the logo. This image will be used in the metadata of the front page and also in the metadata of the content, in case no featured image or other images have been attached or embedded.', 'add-meta-tags').'
                 </label>
                 <p><strong>'.__('Example', 'add-meta-tags').'</strong>: <code>http://example.org/images/logo.png</code></p>
+                <br />
+            </fieldset>
+            </td>
+            </tr>
+
+            <tr valign="top">
+            <th scope="row">'.__('Extended Metadata Support', 'add-meta-tags').'</th>
+            <td>
+            <fieldset>
+                <legend class="screen-reader-text"><span>'.__('Extended Metadata Support', 'add-meta-tags').'</span></legend>
+
+                <p>'.__('Add-Meta-Tags supports the generation of metadata for products and other post types. Please enable any of the following genrators of extended metadata.', 'add-meta-tags').'</p>
+
+                <p><input id="extended_support_woocommerce" type="checkbox" value="1" name="extended_support_woocommerce" '. (($options["extended_support_woocommerce"]=="1") ? 'checked="checked"' : '') .'" />
+                <label for="extended_support_woocommerce">
+                '.__('Metadata for WooCommerce products and product groups.', 'add-meta-tags').' (<span style="color:red;">Work in progress</span>)
+                </label></p>
+
+                <p><input id="extended_support_edd" type="checkbox" value="1" name="extended_support_edd" '. (($options["extended_support_edd"]=="1") ? 'checked="checked"' : '') .'" />
+                <label for="extended_support_edd">
+                '.__('Metadata for Easy-Digital-Downloads products and product groups.', 'add-meta-tags').' (<span style="color:red;">Work in progress</span>)
+                </label></p>
+
+                <p>'.__('Please note that if none of the supported products or other supported post types can be detected, the above settings do not affect the plugin\'s normal functionality.', 'add-meta-tags').'</p>
+
                 <br />
             </fieldset>
             </td>
@@ -1009,7 +1040,7 @@ function amt_inner_metadata_box( $post ) {
                 <label for="amt_custom_image_url"><strong>'.__('Image URL', 'add-meta-tags').'</strong>:</label>
                 <input type="text" class="code" style="width: 99%" id="amt_custom_image_url" name="amt_custom_image_url" value="' . esc_attr( stripslashes( $custom_image_url_value ) ) . '" />
                 <br>
-                '.__('Enter an image URL to override all other images of the content.', 'add-meta-tags').'
+                '.__('Enter an image URL to override all media related meta tags.', 'add-meta-tags').'
             </p>
         ');
 
