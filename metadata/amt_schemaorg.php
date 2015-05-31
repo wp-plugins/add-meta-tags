@@ -215,6 +215,10 @@ function amt_add_schemaorg_metadata_footer( $post, $attachments, $embedded_media
  */
 function amt_add_schemaorg_metadata_content_filter( $post_body ) {
 
+    if ( is_feed() ) {
+        return $post_body;
+    }
+
     if ( ! is_singular() || is_front_page() ) {  // is_front_page() is used for the case in which a static page is used as the front page.
         // In this filter function we only deal with content and attachments.
         return $post_body;
@@ -515,10 +519,15 @@ function amt_add_schemaorg_metadata_content_filter( $post_body ) {
             $metadata_arr[] = '<meta itemprop="articleSection" content="' . esc_attr( $first_cat ) . '" />';
         }
         */
-        foreach( get_the_category($post->ID) as $cat ) {
-            $section = trim( $cat->cat_name );
-            if ( ! empty( $section ) && $cat->slug != 'uncategorized' ) {
-                $metadata_arr[] = '<meta itemprop="articleSection" content="' . esc_attr( $section ) . '" />';
+        // Add articleSection in Article object only.
+        if ( $main_content_object == 'Article' ) {
+            $categories = get_the_category($post->ID);
+            $categories = apply_filters( 'amt_post_categories_for_schemaorg', $categories );
+            foreach( $categories as $cat ) {
+                $section = trim( $cat->cat_name );
+                if ( ! empty( $section ) && $cat->slug != 'uncategorized' ) {
+                    $metadata_arr[] = '<meta itemprop="articleSection" content="' . esc_attr( $section ) . '" />';
+                }
             }
         }
 
@@ -863,6 +872,9 @@ function amt_get_schemaorg_publisher_metatags( $options, $author_id=null ) {
         }
     }
 
+    // Allow filtering of the Publisher meta tags
+    $metadata_arr = apply_filters( 'amt_schemaorg_publisher_extra', $metadata_arr );
+
     return $metadata_arr;
 }
 
@@ -920,6 +932,9 @@ function amt_get_schemaorg_author_metatags( $author_id ) {
     if ( !empty($user_url) ) {
         $metadata_arr[] = '<meta itemprop="sameAs" content="' . esc_url_raw( $user_url, array('http', 'https') ) . '" />';
     }
+
+    // Allow filtering of the Author meta tags
+    $metadata_arr = apply_filters( 'amt_schemaorg_author_extra', $metadata_arr );
 
     return $metadata_arr;
 }

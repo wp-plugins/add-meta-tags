@@ -124,14 +124,14 @@ function amt_sanitize_description($desc) {
 
     // Remove shortcode
     // Needs to be before cleaning double quotes as it may contain quoted settings.
-    $pattern = get_shortcode_regex();
+//    $pattern = get_shortcode_regex();
     //var_dump($pattern);
     // TODO: Possibly this is not needed since shortcodes are stripped in amt_get_the_excerpt().
-    $desc = preg_replace('#' . $pattern . '#s', '', $desc);
+//    $desc = preg_replace('#' . $pattern . '#s', '', $desc);
 
     // Clean double quotes
     $desc = str_replace('"', '', $desc);
-    $desc = str_replace('&quot;', '', $desc);
+//    $desc = str_replace('&quot;', '', $desc);
 
     // Convert single quotes to space
     //$desc = str_replace("'", ' ', $desc);
