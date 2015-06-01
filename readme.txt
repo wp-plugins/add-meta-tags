@@ -607,7 +607,7 @@ This can easily be done by hooking a custom function to the `amt_taxonomy_force_
 
 `
 // Use category images added by the 'Categories Images' plugin.
-function use_taxonomy_images_by_categories_images() {
+function use_taxonomy_images_by_categories_images( $default_image_url, $tax_term_object ) {
     if ( is_category() && function_exists('z_taxonomy_image_url') ) {
         return z_taxonomy_image_url();
     }
