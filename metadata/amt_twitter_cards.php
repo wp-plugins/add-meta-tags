@@ -145,7 +145,7 @@ function amt_add_twitter_cards_metadata_head( $post, $attachments, $embedded_med
                 // If set, the description of the custom taxonomy term is used in the 'description' metatag.
                 // Otherwise, a generic description is used.
                 // Here we sanitize the provided description for safety
-                $description_content = sanitize_text_field( amt_sanitize_description( term_description( $tax_term_object->term_id ) ) );
+                $description_content = sanitize_text_field( amt_sanitize_description( term_description( $tax_term_object->term_id, $tax_term_object->taxonomy ) ) );
                 // Note: Contains multipage information through amt_process_paged()
                 if ( empty( $description_content ) ) {
                     // Add a filtered generic description.
@@ -167,12 +167,18 @@ function amt_add_twitter_cards_metadata_head( $post, $attachments, $embedded_med
                 } else {
                     $metadata_arr[] = '<meta name="twitter:description" content="' . esc_attr( amt_process_paged( $description_content ) ) . '" />';
                 }
-                // Image. Use a user defined image via filter. Otherwise use default image.
-                // Construct the filter name. Template: ``amt_taxonomy_image_url_TAXONOMYSLUG_TERMSLUG``
-                $taxonomy_image_url_filter_name = sprintf( 'amt_taxonomy_image_url_%s_%s', $tax_term_object->taxonomy, $tax_term_object->slug);
-                //var_dump($taxonomy_image_url_filter_name);
-                // The default image, if set, is used by default.
-                $taxonomy_image_url = apply_filters( $taxonomy_image_url_filter_name, $options["default_image_url"] );
+                // Image
+                // Use a user defined image via filter. Otherwise use default image.
+                // First filter using a term/taxonomy agnostic filter name.
+                $taxonomy_image_url = apply_filters( 'amt_taxonomy_force_image_url', '', $tax_term_object );
+                if ( empty($taxonomy_image_url) ) {
+                    // Second filter (term/taxonomy dependent).
+                    // Construct the filter name. Template: ``amt_taxonomy_image_url_TAXONOMYSLUG_TERMSLUG``
+                    $taxonomy_image_url_filter_name = sprintf( 'amt_taxonomy_image_url_%s_%s', $tax_term_object->taxonomy, $tax_term_object->slug);
+                    //var_dump($taxonomy_image_url_filter_name);
+                    // The default image, if set, is used by default.
+                    $taxonomy_image_url = apply_filters( $taxonomy_image_url_filter_name, $options["default_image_url"] );
+                }
                 if ( ! empty( $taxonomy_image_url ) ) {
                     $metadata_arr[] = '<meta name="twitter:image" content="' . esc_url_raw( $taxonomy_image_url ) . '" />';
                 }
