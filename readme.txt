@@ -1,10 +1,10 @@
 === Add Meta Tags ===
 Contributors: gnotaras
 Donate link: http://bit.ly/HvUakt
-Tags: amt, meta, metadata, seo, optimize, ranking, description, keywords, metatag, schema, opengraph, dublin core, schema.org, microdata, google, twitter cards, google plus, yahoo, bing, search engine optimization, rich snippets, semantic, structured, meta tags, product, woocommerce, edd
+Tags: amt, meta, metadata, seo, optimize, ranking, description, keywords, metatag, schema, opengraph, dublin core, schema.org, microdata, google, twitter cards, google plus, yahoo, bing, search engine optimization, rich snippets, semantic, structured, meta tags, product, woocommerce, edd, breadcrumbs, breadcrumb trail
 Requires at least: 3.1.0
 Tested up to: 4.2
-Stable tag: 2.8.6
+Stable tag: 2.8.7
 License: Apache License v2
 License URI: http://www.apache.org/licenses/LICENSE-2.0.txt
 
@@ -13,7 +13,13 @@ Add basic meta tags and also Opengraph, Schema.org Microdata, Twitter Cards and 
 
 == Description ==
 
-*Add-Meta-Tags* (<abbr title="Add-Meta-Tags Wordpress plugin">AMT</abbr>) adds metadata to your content, including the basic *description* and *keywords* meta tags, [Opengraph](http://ogp.me "Opengraph specification"), [Schema.org](http://schema.org/ "Schema.org Specification"), [Twitter Cards](https://dev.twitter.com/docs/cards "Twitter Cards Specification") and [Dublin Core](http://dublincore.org "Dublin Core Metadata Initiative") metadata. It is actively maintained since 2006 (historical [Add-Meta-Tags home](http://www.g-loaded.eu/2006/01/05/add-meta-tags-wordpress-plugin/ "Official historical Add-Meta-Tags Homepage")).
+*Add-Meta-Tags* (<abbr title="Add-Meta-Tags Wordpress plugin">AMT</abbr>) adds metadata to your content, including the basic *description* and *keywords* meta tags, [Opengraph](http://ogp.me "Opengraph specification"), [Schema.org](http://schema.org/ "Schema.org Specification"), [Twitter Cards](https://dev.twitter.com/docs/cards "Twitter Cards Specification") and [Dublin Core](http://dublincore.org "Dublin Core Metadata Initiative") metadata.
+
+Since v2.8.1 it also supports the generation of metadata for *product* and *product group* pages for the *WooCommerce* and *Easy-Digital-Downloads* e-commerce plugins.
+
+Since v2.8.7 a template tag for the generation of a *semantic breadcrumb trail* is available for use in your themes.
+
+Add-Meta-Tags is actively maintained since 2006 (historical [Add-Meta-Tags home](http://www.g-loaded.eu/2006/01/05/add-meta-tags-wordpress-plugin/ "Official historical Add-Meta-Tags Homepage")).
 
 *Add-Meta-Tags* is one of the personal software projects of George Notaras. It is developed in his free time and provided to you as Free software. Although the development is not donation driven, appreciation of the effort and the overall hard work via donations is much appreciated.
 
@@ -202,6 +208,67 @@ This feature should be considered experimental. This information might be change
 Add-Meta-Tags, since v2.8.0, supports the generation of OpenGraph, Schema.org and Twitter Cards metadata for products. Please check *example 12* below for more information about how to make Add-Meta-Tags detect your product and product group pages.
 
 Moreover, since v2.8.1 internal support for the *WooCommerce* and *Easy-Digital-Downloads* e-commerce plugins for WordPress is available. By enabling them in the plugin settings page Add-Meta-Tags is able to autodetect the product and product group pages and generate OpenGraph, Schema.org and Twitter Cards metadata. Please check examples 13 & 14 below for more information about how to customize the metadata that is generated for WooCommerce and EDD products.
+
+= Semantic Breadcrumbs =
+
+Since v2.8.7 a template tag (`amt_breadcrumbs()`) for the generation of a **semantic breadcrumb trail** (Schema.org enhanced) is available for use in your themes.
+
+Below is an example about how to use the template tag in your theme templates to generate a list of Schema.org microdata enabled breadcrumbs for WordPress Pages:
+
+`
+<?php
+  if ( is_page() && function_exists('amt_breadcrumbs') ) {
+    amt_breadcrumbs( array(
+      // ID of list element.
+      'list_id' => 'breadcrumbs',
+      // Show breadcrumb item for the home page.
+      'show_home' => true,
+      // Text for the home link (requires show_home=true).
+      'home_link_text' => 'Home',
+      // Show breadcrumb item for the last page.
+      'show_last' => true,
+      // Show last breadcrumb as link (requires show_last=true).
+      'show_last_as_link' => true,
+      // Separator. Set to empty string for no separator.
+      'separator' => '>'
+  )); }
+?>
+`
+
+The `amt_breadcrumbs()` template tag generates a HTML unordered list. By default, the ID attribute of the list is `breadcrumbs` or whatever you have set in the `list_id` option of the template tag (see above).
+
+The following is entirely optional and not required in order to have semantic breadrumbs.
+
+In order to connect the `breadcrumbs` Schema.org object to the web page's main Schema.org object which represents your content, the following manual actions are necessary:
+
+1. By default, the main Schema.org object that is autogenerated by Add-Meta-Tags for your content is the [Article](http://schema.org/Article). Since the `Article` object does not support a [breadcrumb property](http://schema.org/breadcrumb), it is essential to replace it with the [WebPage](http://schema.org/WebPage) object, which supports a hierarchical structure. This can easily be done by adding the following code to your theme's `functions.php`:
+
+`
+function amt_schemaorg_set_webpage_entity_on_pages( $default ) {
+    if ( is_page() ) {
+        return 'WebPage';
+    }
+    return $default;    // Article
+}
+add_filter( 'amt_schemaorg_object_main', 'amt_schemaorg_set_webpage_entity_on_pages' );
+`
+
+2. Now that the main Schema.org object has been set to [WebPage](http://schema.org/WebPage), we also need to interconnect it with the [BreadcrumbList](http://schema.org/BreadcrumbList) object, which is generated by the `amt_breadcrumbs()` template tag. This can be done by adding the `breadcrumbs` object's ID in the `itemref` attribute of the WebPage object with the following code (again in the `functions.php` file of the theme):
+
+`
+function amt_set_itemref() {
+    if  ( is_page() ) {
+        // Should return space delimited list of entity IDs
+        return 'breadcrumbs';
+    }
+    return '';
+}
+add_filter( 'amt_schemaorg_itemref_content', 'amt_set_itemref' );
+`
+
+Now your semantic breadcrumbs have been connected to the main Schema.org object (WebPage).
+
+In case you use code that generates other Schema.org objects throughout the web page, you can connect those objects to the main Schema.org object by attaching a filtering function like `amt_set_itemref` to the `amt_schemaorg_itemref_content` hook. The function must return a space delimited list of IDs.
 
 = Translations =
 
@@ -617,6 +684,66 @@ add_filter( 'amt_taxonomy_force_image_url', 'use_taxonomy_images_by_categories_i
 
 This code can be placed inside your theme's `functions.php` file.
 
+**Example 16**: Extend the Organization properties.
+
+It would be impossible for Add-Meta-Tags to provide a web based interface for
+users to fill in even the most common Organization properties. Alternatively, it
+provides the `amt_schemaorg_publisher_extra` filter hook, which can be used in order
+to extend the default Organization properties (for the Person object use `amt_schemaorg_author_extra`).
+
+In the following example, a filtering function (`amt_schemaorg_publisher_extra_tags`) is
+attached to the `amt_schemaorg_publisher_extra` hook and adds:
+
+ * Extra social profile URLs (Youtube, LinkedIn).
+ * Adds a postal address object to the Organization object.
+ * Adds a 'sales' and a 'technical support' contact points to the Organization object.
+
+Sample code:
+
+`
+function amt_schemaorg_publisher_extra_tags( $metatags ) {
+    // Social profiles for LinkedIn, Youtube
+    $metatags[] = '<meta itemprop="sameAs" content="https://www.youtube.com/channel/abcdef" />';
+    $metatags[] = '<meta itemprop="sameAs" content="https://www.linkedin.com/in/abcdef" />';
+
+    // Organization Postal Address
+    $metatags[] = '<!-- Scope BEGIN: Organization Postal Address -->';
+    $metatags[] = '<span itemprop="address" itemscope itemtype="http://schema.org/PostalAddress">';
+    $metatags[] = '<meta itemprop="streetAddress" content="WordPress Str. 123" />';
+    $metatags[] = '<meta itemprop="postalCode" content="12345" />';
+    $metatags[] = '<meta itemprop="addressLocality" content="City, Country" />';
+    $metatags[] = '</span> <!-- Scope END: Organization Postal Address -->';
+
+    // Sales
+    $metatags[] = '<!-- Scope BEGIN: ContactPoint - Sales -->';
+    $metatags[] = '<span itemprop="contactPoint" itemscope itemtype="http://schema.org/ContactPoint">';
+    $metatags[] = '<meta itemprop="contactType" content="sales" />';
+    $metatags[] = '<meta itemprop="telephone" content="+1-800-555-1212" />';
+    $metatags[] = '<meta itemprop="faxNumber" content="+1-800-555-1213" />';
+    $metatags[] = '<meta itemprop="email" content="sales(at)example.org" />';
+    $metatags[] = '<!-- Scope BEGIN: OpeningHoursSpecification -->';
+    $metatags[] = '<span itemprop="hoursAvailable" itemscope itemtype="http://schema.org/OpeningHoursSpecification">';
+    $metatags[] = '<meta itemprop="opens" content="09:00" />';
+    $metatags[] = '<meta itemprop="closes" content="21:00" />';
+    $metatags[] = '<meta itemprop="dayOfWeek" content="Monday,Tuesday,Wednesday,Thursday,Friday" />';
+    $metatags[] = '</span> <!-- Scope END: OpeningHoursSpecification -->';
+    $metatags[] = '</span> <!-- Scope END: ContactPoint - Sales -->';
+
+    // Technical Support
+    $metatags[] = '<!-- Scope BEGIN: ContactPoint - Technical Support -->';
+    $metatags[] = '<span itemprop="contactPoint" itemscope itemtype="http://schema.org/ContactPoint">';
+    $metatags[] = '<meta itemprop="contactType" content="technical support" />';
+    $metatags[] = '<meta itemprop="telephone" content="+1-800-555-1214" />';
+    $metatags[] = '<meta itemprop="faxNumber" content="+1-800-555-1215" />';
+    $metatags[] = '<meta itemprop="email" content="support(at)example.org" />';
+    $metatags[] = '</span> <!-- Scope END: ContactPoint - Sales -->';
+
+    return $metatags;
+}
+add_filter( 'amt_schemaorg_publisher_extra', 'amt_schemaorg_publisher_extra_tags' );
+`
+This code can be placed inside your theme's `functions.php` file.
+
 
 = Custom Fields =
 
@@ -648,6 +775,7 @@ The following *template tags* are available for use in your theme:
 1. `amt_content_keywords()` : prints a comma-delimited list of the content's keywords as generated by Add-Meta-Tags.
 1. `amt_metadata_head()` : prints the full metadata for the head area as generated by Add-Meta-Tags.
 1. `amt_metadata_footer()` : prints the full metadata for the head area as generated by Add-Meta-Tags.
+1. `amt_breadcrumbs()` : prints an unordered list of semantic (Schema.org enabled) breadcrumbs.
 
 = Theme Requirements =
 
@@ -730,6 +858,18 @@ You can find the bug tracker at the [Add-Meta-Tags Development web site](http://
 
 The amount of the donation is totally up to you. You can think of it like this: Are you happy with the plugin? Do you think it makes your life easier or adds value to your web site? If this is a yes and, if you feel like showing your appreciation, you could imagine buying me a cup of coffee at your favorite Cafe and <a href="http://bit.ly/HvUakt">make a donation</a> accordingly.
 
+= I've added a low star rating in order to motivate you! Why don't you help me or not implement the feature I want? =
+
+Time permitting, the developer generally tries to do his best with providing free support for this plugin.
+
+But, if you try to force that support with a low star rating, it is guaranteed you are not going to get any help. Unfortunately, it's never going to work that way. So, please, do not do it. You are encouraged to provide detailed feedback in the forums and work closely with the dev in order to get problems fixed. Then, feel free to add your review.
+
+= What should I always bare in mind before asking for support? =
+
+This plugin is Free software. It is developed in the author's free time and is offered without support of any kind. However, the developer tries to do his best to offer support for free in these forums.
+
+You are expected to *collaborate* and act as a *contributor*. Detailed feedback is almost always the key for the quick resolution of any issue. Give the developer time to respond. Acting and expressing demands as if you are the customer or as if the developer is your personal assistant or employee is not a good way to ask for support. In fact, there is very little tolerance for such kind of behavior. Please, do not do it. Fixing all potential issues is just a matter of good collaboration.
+
 
 == Screenshots ==
 
@@ -745,6 +885,15 @@ Screenshots as of v2.4.0
 
 Please check out the changelog of each release by following the links below. You can also check the [roadmap](http://www.codetrax.org/projects/wp-add-meta-tags/roadmap "Add-Meta-Tags Roadmap") regarding future releases of the plugin.
 
+- [2.8.7](http://www.codetrax.org/versions/287)
+ - DEPRECATION WARNING: In Add-Meta-Tags v2.9 the ability to store Publisher social profile URLs in the user's Profile Page (Publisher related AMT fields) will no longer be enabled by default. It is highly recommended to set the Publisher's social profile URLs in the plugin settings page (Publisher Settings section).
+ - FUNCTIONALITY CHANGE: The Schema.org microdata generator has been improved in 2.8.7. It is highly recommended to check your pages using Google's [Structured Data Testing Tool](https://developers.google.com/structured-data/testing-tool/) or the [Structured Data Validator](https://webmaster.yandex.com/microtest.xml) by Yandex. Some important changes can be found in the entries that follow.
+ - Social profile links for the `Organization` and `Person` objects are now automatically added as `sameAs` Schema.org properties to the aforementioned objects.
+ - The main Schema.org object of the front page has been changed to `WebSite` and the `Organization` object has been added to it as the `publisher` property.
+ - Added support for the [Sitelinks Search Box](https://developers.google.com/structured-data/slsb-overview).
+ - A new **template tag** that generates a *semantic breadcrumb trail* (contains Schema.org microdata) has been implemented. Please check the description page for more information about how to use the template tag. (props to Nicolaie Szabadkai for ideas and feedback)
+ - Added support for the customization (via filter) of the `itemref` attribute of the main Schema.org object. This way other entities, such as a semantic breadcrumb trail or semantic comments/reviews, can be connected to the main Schema.org entity of the web page. Check the information about the breadcrumbs on the description page, which also has all the itemref relevant information.
+ - Added **example 16** to help users add extra social profile links, a postal address and some contact points to the `Organization` object. Make sure you check it out.
 - [2.8.6](http://www.codetrax.org/versions/286)
  - Added filter `amt_sanitize_description_extra` filter hook for user-defined description sanitization filtering.
  - Added filter `amt_sanitize_keywords_extra` filter hook for user-defined keywords sanitization filtering.
