@@ -803,6 +803,7 @@ function amt_get_metadata_metabox_permissions() {
         'news_keywords_box_capability' => 'edit_posts',
         'full_metatags_box_capability' => 'edit_posts',
         'image_url_box_capability' => 'edit_posts',
+        'express_review_box_capability' => 'edit_posts',
         'referenced_list_box_capability' => 'edit_posts'
     );
     // Allow filtering of the metabox permissions
@@ -1036,6 +1037,41 @@ function amt_get_post_meta_image_url($post_id) {
     // External fields - Allow filtering
     $external_fields = array();
     $external_fields = apply_filters( 'amt_external_image_url_fields', $external_fields, $post_id );
+    // Merge external fields to our supported custom fields
+    $supported_custom_fields = array_merge( $supported_custom_fields, $external_fields );
+
+    // Get an array of all custom fields names of the post
+    $custom_fields = get_post_custom_keys( $post_id );
+    if ( empty( $custom_fields ) ) {
+        // Just return an empty string if no custom fields have been associated with this content.
+        return '';
+    }
+
+    // Try our fields
+    foreach( $supported_custom_fields as $sup_field ) {
+        // If such a field exists in the db, return its content as the news keywords.
+        if ( in_array( $sup_field, $custom_fields ) ) {
+            return get_post_meta( $post_id, $sup_field, true );
+        }
+    }
+
+    //Return empty string if all fail
+    return '';
+}
+
+
+/**
+ * Helper function that returns the value of the custom field that contains
+ * express review related information.
+ * The default field name for the 'express review' is ``_amt_express_review``.
+ * No need to migrate from older field name.
+ */
+function amt_get_post_meta_express_review($post_id) {
+    // Internal fields - order matters
+    $supported_custom_fields = array( '_amt_express_review' );
+    // External fields - Allow filtering
+    $external_fields = array();
+    $external_fields = apply_filters( 'amt_external_express_review_fields', $external_fields, $post_id );
     // Merge external fields to our supported custom fields
     $supported_custom_fields = array_merge( $supported_custom_fields, $external_fields );
 
@@ -1624,6 +1660,63 @@ function amt_is_product_group() {
     return apply_filters( 'amt_is_product_group', false );
 }
 
+
+// Reviews
+
+// Returns an array containing review related data, only when the provided data is valid.
+function amt_get_review_data( $data ) {
+    if ( empty($data) ) {
+        return;
+    }
+    // Clean new line information
+    $data = preg_replace( '#[\r\n]+#', '', $data );
+    // Check if $data contains exactly 4 items in a '__' delimited list.
+    $parts = explode( '__', $data );
+    if ( count($parts) != 4 ) {
+        return;
+    }
+    // Return the array with review data
+    return array(
+        'rating' => trim($parts[0]),
+        'object' => trim($parts[1]),
+        'name' => trim($parts[2]),
+        'url' => trim($parts[3])
+    );
+}
+
+
+// Return the information text that should be attached to the post content.
+function amt_get_review_info_box( $review_data ) {
+    // Variables: #rating#, #bestrating#, #object#, #name#, #url#
+    $template = '
+<div id="review-info" class="review-info">
+    <p>This is a review of
+    <span itemprop="itemReviewed" itemscope itemtype="http://schema.org/#object#">
+        <a title="#object#: #name#" href="#url#" itemprop="sameAs"><span itemprop="name">#name#</span></a>
+    </span>, which has been rated with 
+    <span class="rating" itemprop="reviewRating" itemscope itemtype="http://schema.org/Rating">
+        <span itemprop="ratingValue">#rating#</span>/<span itemprop="bestRating">#bestrating#</span>
+    </span> stars!</p>
+</div>
+';
+    // Allow filtering of the template
+    $template = apply_filters( 'amt_schemaorg_review_info_template', $template );
+    // Set variables
+    $bestrating = apply_filters( 'amt_schemaorg_review_bestrating', '5' );
+    // Replace placeholders
+    $output = $template;
+    $output = str_replace('#rating#', $review_data['rating'], $output);
+    $output = str_replace('#bestrating#', $bestrating, $output);
+    $output = str_replace('#object#', $review_data['object'], $output);
+    $output = str_replace('#name#', $review_data['name'], $output);
+    $output = str_replace('#url#', $review_data['url'], $output);
+    // Allow filtering of the output
+    $output = apply_filters( 'amt_schemaorg_review_info_output', $output );
+    return $output;
+}
+
+
+// Breadcrumbs
 
 // Generates a semantic (Schema.org) breadcrumb trail.
 // Accepts array
