@@ -15,15 +15,15 @@ Add basic meta tags and also Opengraph, Schema.org Microdata, Twitter Cards and 
 
 *Add-Meta-Tags* (<abbr title="Add-Meta-Tags Wordpress plugin">AMT</abbr>) adds metadata to your content, including the basic *description* and *keywords* meta tags, [Opengraph](http://ogp.me "Opengraph specification"), [Schema.org](http://schema.org/ "Schema.org Specification"), [Twitter Cards](https://dev.twitter.com/docs/cards "Twitter Cards Specification") and [Dublin Core](http://dublincore.org "Dublin Core Metadata Initiative") metadata.
 
-Add-Meta-Tags is actively maintained since 2006 (historical [Add-Meta-Tags home](http://www.g-loaded.eu/2006/01/05/add-meta-tags-wordpress-plugin/ "Official historical Add-Meta-Tags Homepage")).
+It is actively maintained since 2006 (historical [Add-Meta-Tags home](http://www.g-loaded.eu/2006/01/05/add-meta-tags-wordpress-plugin/ "Official historical Add-Meta-Tags Homepage")).
 
-*Add-Meta-Tags* is one of the personal software projects of George Notaras. It is developed in his free time and provided to you as Free software. Although the development is not donation driven, appreciation of the effort and the overall hard work via donations is much appreciated.
+*Add-Meta-Tags* is one of the personal software projects of George Notaras. It is developed in his free time and released to the open source WordPress community as Free software.
 
 
 = Highlights of the latest releases =
 
-- Since v2.8.1 Add-Meta-Tags also supports the generation of metadata for *product* and *product group* pages for the *WooCommerce* and *Easy-Digital-Downloads* e-commerce plugins.
 - Since v2.8.7 a template tag for the generation of a *semantic breadcrumb trail* is available for use in your themes (see below for more info).
+- Since v2.8.1 Add-Meta-Tags supports the generation of metadata for *product* and *product group* pages for the *WooCommerce* and *Easy-Digital-Downloads* e-commerce plugins.
 
 
 = Goals =
@@ -59,16 +59,18 @@ Thank you in advance for **donating**!
 
 = Features =
 
+Add-Meta-Tags automatically generates metadata for your content.
+
 **Main Features**
 
-The main features of the Add-Meta-Tags plugin include:
+The main features of the plugin include:
 
 * Generation of basic meta tags, such as the *description* and *keywords* meta tags.
 * Generation of [Opengraph](http://ogp.me "Opengraph specification") metadata.
 * Generation of [Schema.org](http://schema.org/ "Schema.org Specification") metadata.
 * Generation of [Twitter Cards](https://dev.twitter.com/docs/cards "Twitter Cards Specification") metadata.
 * Generation of [Dublin Core](http://dublincore.org "Dublin Core Metadata Initiative") metadata.
-* The various metadata types are generated for posts, pages, custom post types, attachment pages, category, tag, custom-taxonomy, author archives and the front page.
+* The various metadata types are generated for posts, pages, custom post types, attachment pages, category, tag, custom-taxonomy, author archives and the front page. Please note that not all generators produce metadata for all the aforementioned content types. In some cases, this happens because of limitations of the metadata specification. Moreover, the generators are constantly being improved so as to produce as complete metadata as possible.
 * Supports both the default 'latest posts' front page or static pages, which are used as the front page and as the 'latest posts' page.
 * Supports the generation of metadata for some types of embedded media (see below for more information).
 * Supports the generation of metadata for *product* and *product group* pages for the *WooCommerce* and *Easy-Digital-Downloads* e-commerce plugins. (This featured is marked as `Work-In-Progress`)
@@ -81,13 +83,14 @@ The main features of the Add-Meta-Tags plugin include:
 Additional SEO and other features include:
 
 * Web site description and keywords.
-* Global keywords
-* The addition of full meta tags that appear site-wide.
-* Supports a default image, such as your web site's logo, which is used as a fallback, if another image cannot be determined.
+* Global keywords. These are keywords that are automatically added to the keywords of the content throughout the web site.
+* Site-wide meta tags. It is possible to add full meta tags, such as verification meta tags or meta tags with extra robots rules, that appear throughout the web site.
+* Supports a default image, such as your web site's logo, which is used as a fallback, if no other image can be determined.
 * Supports the addition of the *copyright* meta tag.
-* Supports the addition of the `NOODP,NOYDIR` options to the robots meta tag.
-* Supports the addition of the `NOINDEX,FOLLOW` options to the robots meta tag on category, tag, author, time based archives and search results. The option to exclude the first page of each of the aforementioned archives from this rule is provided.
-* Metadata review mode. When enabled, WordPress users with administrator privileges see a box (right above the post's content) containing the metadata exactly as it is added in the HTML head and body for easier examination. The box is displayed for posts, pages, attachments and custom post types.
+* Supports the addition of the `NOODP,NOYDIR` options to the *robots* meta tag.
+* Supports the addition of the `NOINDEX,FOLLOW` options to the *robots* meta tag on category, tag, author, time based archives and search results. The option to exclude the first page of each of the aforementioned archives from this rule is provided.
+* Metadata review mode. When enabled, WordPress users with administrator privileges see a box (right above the post's content) containing the metadata exactly as it is added in the HTML head and body for easier examination. The box is displayed on posts, pages, attachments and custom post types.
+* Supports reading data, such as custom descriptions, keywords, custom titles, etc from external fields and thus makes the migration from other plugins extremely easy.
 
 **Customization through the User Interface**
 
@@ -106,7 +109,16 @@ The generation of metadata is automatic. However, customization by the user is p
 
 Add-Meta-Tags supports advanced customization via the WordPress filter and action system. See the [list of available filter and action hooks](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Filter_and_Action_Hooks) offered by the plugin.
 
-Although this level of customization is mainly available for developers and power users, much sample code that *just works* can be found in the [forums](https://wordpress.org/support/plugin/add-meta-tags). The [Add-Meta-Tags Cookbook](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Add-Meta-Tags_Cookbook), a collection of code snippets, is also available (still work in progress -- needs much work).
+Although this level of customization is mainly available for developers and power users, much sample code that *just works* can be found in the [forums](https://wordpress.org/support/plugin/add-meta-tags).
+
+Moreover, the [Add-Meta-Tags Cookbook](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Add-Meta-Tags_Cookbook), which is a collection of code snippets that perform specific commonly needed customizations, is also available. (Note: still work in progress -- needs much work).
+
+
+= Migrate to Add-Meta-Tags =
+
+Migrating to Add-Meta-Tags from any other plugin is extremely easy. In fact, if the 3rd party plugin stores data in [Custom Fields](https://codex.wordpress.org/Custom_Fields) provided by WordPress, no migration process needs to be done. Add-Meta-Tags can read data from multiple external fields by adding a small snippet of PHP code in the `functions.php` file of your theme.
+
+So, if you decided to use Add-Meta-Tags as you main SEO plugin or if you just want to test how it would work with the data you have inserted in another plugin, please check the [Migrating to Add-Meta-Tags](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Migrate_to_Add-Meta-Tags) section of the Add-Meta-Tags Cookbook.
 
 
 = Key Notes about the Metadata Generators =
@@ -285,13 +297,6 @@ As it has been mentioned, no configuration is required for the plugin to functio
 Read more information about the [Add-Meta-Tags installation](http://www.g-loaded.eu/2006/01/05/add-meta-tags-wordpress-plugin/ "Official Add-Meta-Tags Homepage").
 
 
-== Upgrade Notice ==
-
-= 2.9 =
-
-- In 2.9 publisher social media profile links can no longer be set in the WordPress user profile page. Please move such information to the `Publisher Settings` section of Add-Meta-Tags settings page (Settings->Metadata). Social media profile links for authors (AMT fields) are still available in the WordPress user profile page and should not be modified.
-
-
 == Frequently Asked Questions ==
 
 = Plugin X displays a warning about Add-Meta-Tags being incompatible! What should I do? =
@@ -365,6 +370,13 @@ Screenshots as of v2.4.0
 2. Enable Metadata meta box in the screen options of the post editing panel.
 3. Metadata box in the post editing panel.
 4. Contact info entries added by Add-Meta-Tags (AMT) in the user profile page.
+
+
+== Upgrade Notice ==
+
+= 2.9 =
+
+In 2.9 publisher social media profile links can no longer be set in the WordPress user profile page. Please move such information to the `Publisher Settings` section of Add-Meta-Tags settings page (Settings->Metadata).
 
 
 == Changelog ==
