@@ -65,7 +65,7 @@ Add-Meta-Tags automatically generates metadata for your content.
 
 The main features of the plugin include:
 
-* Generation of basic meta tags, such as the *description* and *keywords* meta tags. ([more info](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Metadata_Generators_Key_Notes#Opengraph-Metadata))
+* Generation of basic meta tags, such as the *description* and *keywords* meta tags. ([more info](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Metadata_Generators_Key_Notes#Basic-Meta-Tags))
 * Generation of [Opengraph](http://ogp.me "Opengraph specification") metadata. ([more info](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Metadata_Generators_Key_Notes#Opengraph-Metadata))
 * Generation of [Schema.org](http://schema.org/ "Schema.org Specification") metadata. ([more info](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Metadata_Generators_Key_Notes#Schemaorg-Microdata))
 * Generation of [Twitter Cards](https://dev.twitter.com/docs/cards "Twitter Cards Specification") metadata. ([more info](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Metadata_Generators_Key_Notes#Twitter-Cards))
