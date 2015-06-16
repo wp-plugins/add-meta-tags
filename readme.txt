@@ -17,13 +17,13 @@ Add basic meta tags and also Opengraph, Schema.org Microdata, Twitter Cards and 
 
 It is actively maintained since 2006 (historical [Add-Meta-Tags home](http://www.g-loaded.eu/2006/01/05/add-meta-tags-wordpress-plugin/ "Official historical Add-Meta-Tags Homepage")).
 
-*Add-Meta-Tags* is one of the personal software projects of George Notaras. It is developed in his free time and released to the open source WordPress community as Free software.
+*Add-Meta-Tags* is one of the personal software projects of George Notaras. It is developed in his free time and released to the open source WordPress community as Free software. If you are looking for technical documentation, please visit the [Add-Meta-Tags development website's wiki](http://www.codetrax.org/projects/wp-add-meta-tags/wiki).
 
 
 = Highlights of the latest releases =
 
-- Since v2.8.7 a basic template tag for the generation of a *semantic breadcrumb trail* for hierarchically structured content types, such as pages, is available for use in your themes ([read more](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Semantic_Breadcrumbs)).
-- Since v2.8.1 Add-Meta-Tags supports the generation of metadata for *product* and *product group* pages for the *WooCommerce* and *Easy-Digital-Downloads* e-commerce plugins.
+- Since v2.8.7 a basic template tag for the generation of a *semantic breadcrumb trail* for hierarchically structured content types, such as pages, is available for use in your themes ([more info](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Semantic_Breadcrumbs)).
+- Since v2.8.1 Add-Meta-Tags supports the generation of metadata for *product* and *product group* pages for the *WooCommerce* and *Easy-Digital-Downloads* e-commerce plugins ([more info](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Metadata_Generators_Key_Notes#Metadata-for-products).
 
 
 = Goals =
@@ -65,15 +65,15 @@ Add-Meta-Tags automatically generates metadata for your content.
 
 The main features of the plugin include:
 
-* Generation of basic meta tags, such as the *description* and *keywords* meta tags.
-* Generation of [Opengraph](http://ogp.me "Opengraph specification") metadata.
-* Generation of [Schema.org](http://schema.org/ "Schema.org Specification") metadata.
-* Generation of [Twitter Cards](https://dev.twitter.com/docs/cards "Twitter Cards Specification") metadata.
-* Generation of [Dublin Core](http://dublincore.org "Dublin Core Metadata Initiative") metadata.
+* Generation of basic meta tags, such as the *description* and *keywords* meta tags. ([more info](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Metadata_Generators_Key_Notes#Opengraph-Metadata)
+* Generation of [Opengraph](http://ogp.me "Opengraph specification") metadata. ([more info](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Metadata_Generators_Key_Notes#Opengraph-Metadata)
+* Generation of [Schema.org](http://schema.org/ "Schema.org Specification") metadata. ([more info](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Metadata_Generators_Key_Notes#Schemaorg-Microdata)
+* Generation of [Twitter Cards](https://dev.twitter.com/docs/cards "Twitter Cards Specification") metadata. ([more info](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Metadata_Generators_Key_Notes#Twitter-Cards)
+* Generation of [Dublin Core](http://dublincore.org "Dublin Core Metadata Initiative") metadata. [more info](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Metadata_Generators_Key_Notes#Dublin-Core-metadata)
 * The various metadata types are generated for posts, pages, custom post types, attachment pages, category, tag, custom-taxonomy, author archives and the front page. Please note that not all generators produce metadata for all the aforementioned content types. In some cases, this happens because of limitations of the metadata specification. Moreover, the generators are constantly being improved so as to produce as complete metadata as possible.
 * Supports both the default 'latest posts' front page or static pages, which are used as the front page and as the 'latest posts' page.
-* Supports the generation of metadata for some types of embedded media (see below for more information).
-* Supports the generation of metadata for *product* and *product group* pages for the *WooCommerce* and *Easy-Digital-Downloads* e-commerce plugins. (This featured is marked as `Work-In-Progress`)
+* Supports the generation of metadata for some types of embedded media (see below for more information). ([more info](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Metadata_Generators_Key_Notes#Metadata-for-embedded-media)
+* Supports the generation of metadata for *product* and *product group* pages for the *WooCommerce* and *Easy-Digital-Downloads* e-commerce plugins. (This featured is marked as `Work-In-Progress`) ([more info](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Metadata_Generators_Key_Notes#Metadata-for-products)
 * The metadata generators support social media profile links for each author.
 * Publisher settings shared by all authors (currently only social media profile links).
 * Custom locale setting, which is used in all generated metadata.
@@ -91,7 +91,6 @@ Additional SEO and other features include:
 * Supports the addition of the `NOINDEX,FOLLOW` options to the *robots* meta tag on category, tag, author, time based archives and search results. The option to exclude the first page of each of the aforementioned archives from this rule is provided.
 * Metadata review mode. When enabled, WordPress users with administrator privileges see a box (right above the post's content) containing the metadata exactly as it is added in the HTML head and body for easier examination. The box is displayed on posts, pages, attachments and custom post types.
 * Supports reading data, such as custom descriptions, keywords, custom titles, etc from external fields and thus makes the migration from other plugins extremely easy.
-* Semantic breadcrumb generation. Among other template tags, a basic template tag for the generation of a *semantic breadcrumb trail* for hierarchically structured content types, such as pages, has been included for use in your themes ([read more](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Semantic_Breadcrumbs))
 
 **Customization through the User Interface**
 
@@ -114,75 +113,17 @@ Although this level of customization is mainly available for developers and powe
 
 Moreover, the [Add-Meta-Tags Cookbook](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Add-Meta-Tags_Cookbook), which is a collection of code snippets that perform specific commonly needed customizations, is also available. (Note: still work in progress -- needs much work).
 
+**Template Tags**
+
+* Some [metadata related template tags](http://www.codetrax.org/projects/wp-add-meta-tags/wiki#Template-Tags) have been included for use in the themes:
+* Semantic breadcrumb generator. Among other template tags, a basic template tag for the generation of a *semantic breadcrumb trail* for hierarchically structured content types, such as pages, has been included for use in your themes ([read more](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Semantic_Breadcrumbs))
+
 
 = Migrate to Add-Meta-Tags =
 
 Migrating to Add-Meta-Tags from any other plugin is extremely easy. In fact, if the 3rd party plugin stores data in [Custom Fields](https://codex.wordpress.org/Custom_Fields) provided by WordPress, no migration process needs to be done. Add-Meta-Tags can read data from multiple external fields by adding a small snippet of PHP code in the `functions.php` file of your theme.
 
 So, if you decided to use Add-Meta-Tags as you main SEO plugin or if you just want to test how it would work with the data you have inserted in another plugin, please check the [Migrating to Add-Meta-Tags](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Migrate_to_Add-Meta-Tags) section of the Add-Meta-Tags Cookbook.
-
-
-= Key Notes about the Metadata Generators =
-
-This section contains some detals about the available metadata generators. More information for each generator can be found in the plugin settings page.
-
-**Opengraph metadata**
-
-Opengraph meta tags can be automatically added to the front page, posts, pages, custom post types, attachment pages and author archive.
-
-It is possible to control the value of the `og:type` meta tag either by changing the post format or programmatically via a filter. By default, the `og:type` is set to `article` for all content, except for video attachment pages and posts whose post format has been set to `video`, on which `og:type` is set to `video.other`.
-
-**Schema.org Microdata**
-
-Schema.org Microdata can be automatically added to the front page, posts, pages, custom post types, attachment pages and author archive.
-
-The plugin automatically marks up posts, pages and custom post types as `Article` objects and also images, videos and audio as `Image`, `Video` and `Audio` MediaObjects respectively. It also considers the web site as an `Organization` object and the author as a `Person` object.
-
-**Twitter Cards**
-
-Twitter Cards can be automatically generated for content and attachment pages. The type of card that is generated depends either on the post format or the mime type of the attachment. More specifically:
-
-- A `summary` card is generated for posts with one of the `standard`, `aside`, `link`, `quote`, `status` and `chat` formats.
-- A `summary_large_image` card is generated for posts with the `image` format. An image is expected to be attached or embedded to the post.
-- A `gallery` card is generated for posts with the `gallery` format. At least one image is expected to be attached or embedded to the post.
-- A `photo` card is generated for image attachment pages.
-- A `player` card is generated for posts with the `audio` or `video` format and for audio or video attachment pages. Regarding posts, an audio or video is expected to be attached or embedded to the post.
-
-The generation of a `player` card that renders a player for locally hosted audio and video files has very specific requirements, as outlined in the [Player Card specifications](https://dev.twitter.com/cards/types/player). This is why there is a separate option in the plugin configuration panel that enables this feature. In short, enable this feature only if access over the secure HTTPS protocol (SSL) has been configured for your web site, otherwise the Player cards will not be rendered by Twitter.
-
-Moreover, in order to generate the `twitter:image` meta tag of the Player Card of locally hosted audio and video files, it is required to set a featured image on the attachment or on the parent post. By default, Add-Meta-Tags uses the `full` size of the image for the generation of the `twitter:image` meta tag. Advanced users can use the `amt_image_video_preview` filter to customize this image size (see [examples](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Add-Meta-Tags_Cookbook) about how to use the available filters).
-
-**Dublin Core metadata**
-
-Dublin Core metatags can be automatically added to posts, pages, custom post types and attachment pages.
-
-
-= Metadata for embedded media =
-
-Add-Meta-Tags generates detailed metadata for the media that have been attached to the content. This happens for all the media you manage in the WordPress media library.
-
-Apart from attaching local media to the content, WordPress lets authors also <a href="http://codex.wordpress.org/Embeds">embed external media</a> by simply adding a link to those media inside the content or by using the `[embed]` shortcode. Several external services are supported.
-
-Add-Meta-Tags can detect some of those media and generate metadata for them. Currently, only links to Youtube, Vimeo and Vine videos, Soundcloud tracks and Flickr images are supported. So, even if you host your media externally on those services, this plugin can still generate metadata for them. This metadata is by no means as detailed as the metadata that is generated for local media, but it gives search engines a good idea about what external media are associated with your content.
-
-This feature relies entirely on the data WordPress has already cached for the embedded media. The plugin will never send any requests to external services attempting to get more detailed information about the embedded media as this would involve unacceptable overhead.
-
-Here is what is supported:
-
-- Links to Youtube videos of the form: `http://www.youtube.com/watch?v=VIDEO_ID`
-- Links to Vimeo videos of the form: `http://vimeo.com/VIDEO_ID`
-- Links to Vine videos of the form: `https://vine.co/v/VIDEO_ID`
-- Links to Soundcloud tracks of the form: `https://soundcloud.com/USER_ID/TRACK_ID`
-- Links to Flickr images of the form: `http://www.flickr.com/photos/USER_ID/IMAGE_ID/`
-
-This feature should be considered experimental. This information might be changed in future versions of the plugin.
-
-
-= Metadata for products =
-
-Add-Meta-Tags, since v2.8.0, supports the generation of OpenGraph, Schema.org and Twitter Cards metadata for products. Please check [example 12](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Add-Meta-Tags_Cookbook#Example-12-Generate-product-specific-metadata) for more information about how to make Add-Meta-Tags detect your product and product group pages.
-
-Moreover, since v2.8.1 internal support for the *WooCommerce* and *Easy-Digital-Downloads* e-commerce plugins for WordPress is available. By enabling them in the plugin settings page Add-Meta-Tags is able to autodetect the product and product group pages and generate OpenGraph, Schema.org and Twitter Cards metadata. Please check examples [13](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Add-Meta-Tags_Cookbook#Example-13-Customize-metadata-for-WooCommerce-products) & [14](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Add-Meta-Tags_Cookbook#Example-14-Customize-metadata-for-Easy-Digital-Downloads-products) for more information about how to customize the metadata that is generated for WooCommerce and EDD products.
 
 
 = Translations =
@@ -199,11 +140,13 @@ If you are interested in contributing code to this project, please make sure you
 
 = Support and Feedback =
 
-Please post your questions and provide general feedback and requests at the [Add-Meta-Tags Community Support Forum](http://wordpress.org/support/plugin/add-meta-tags).
+Add-Meta-Tags is released as Free software and comes with absolutely no support.
 
-To avoid duplicate effort, please do some research on the forum before asking a question, just in case the same or similar question has already been answered.
+However, the developer and the community of users share their knowledge in the [Add-Meta-Tags Community Support Forum](http://wordpress.org/support/plugin/add-meta-tags). Feel free to ask your questions there and provide as detailed feedback as possible about the potential problems you encounter. It might take a while before someone responds. To avoid duplicate effort, please do some [research on the forum](https://wordpress.org/support/topic/how-to-search-this-forum-2) before asking a question, just in case the same or similar question has already been answered.
 
-Also, make sure you read the [FAQ](http://wordpress.org/plugins/add-meta-tags/faq/ "Add-Meta-Tags FAQ").
+Also, make sure you read the [FAQ](http://wordpress.org/plugins/add-meta-tags/faq/ "Add-Meta-Tags FAQ"). An answer to your question might already exist there.
+
+Commercial grade support is not available.
 
 
 = Template Tags =
