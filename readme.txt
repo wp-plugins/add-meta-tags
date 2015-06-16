@@ -23,7 +23,7 @@ It is actively maintained since 2006 (historical [Add-Meta-Tags home](http://www
 = Highlights of the latest releases =
 
 - Since v2.8.7 a basic template tag for the generation of a *semantic breadcrumb trail* for hierarchically structured content types, such as pages, is available for use in your themes ([more info](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Semantic_Breadcrumbs)).
-- Since v2.8.1 Add-Meta-Tags supports the generation of metadata for *product* and *product group* pages for the *WooCommerce* and *Easy-Digital-Downloads* e-commerce plugins ([more info](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Metadata_Generators_Key_Notes#Metadata-for-products).
+- Since v2.8.1 Add-Meta-Tags supports the generation of metadata for *product* and *product group* pages for the *WooCommerce* and *Easy-Digital-Downloads* e-commerce plugins ([more info](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Metadata_Generators_Key_Notes#Metadata-for-products)).
 
 
 = Goals =
@@ -65,15 +65,15 @@ Add-Meta-Tags automatically generates metadata for your content.
 
 The main features of the plugin include:
 
-* Generation of basic meta tags, such as the *description* and *keywords* meta tags. ([more info](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Metadata_Generators_Key_Notes#Opengraph-Metadata)
-* Generation of [Opengraph](http://ogp.me "Opengraph specification") metadata. ([more info](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Metadata_Generators_Key_Notes#Opengraph-Metadata)
-* Generation of [Schema.org](http://schema.org/ "Schema.org Specification") metadata. ([more info](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Metadata_Generators_Key_Notes#Schemaorg-Microdata)
-* Generation of [Twitter Cards](https://dev.twitter.com/docs/cards "Twitter Cards Specification") metadata. ([more info](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Metadata_Generators_Key_Notes#Twitter-Cards)
-* Generation of [Dublin Core](http://dublincore.org "Dublin Core Metadata Initiative") metadata. [more info](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Metadata_Generators_Key_Notes#Dublin-Core-metadata)
+* Generation of basic meta tags, such as the *description* and *keywords* meta tags. ([more info](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Metadata_Generators_Key_Notes#Opengraph-Metadata))
+* Generation of [Opengraph](http://ogp.me "Opengraph specification") metadata. ([more info](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Metadata_Generators_Key_Notes#Opengraph-Metadata))
+* Generation of [Schema.org](http://schema.org/ "Schema.org Specification") metadata. ([more info](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Metadata_Generators_Key_Notes#Schemaorg-Microdata))
+* Generation of [Twitter Cards](https://dev.twitter.com/docs/cards "Twitter Cards Specification") metadata. ([more info](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Metadata_Generators_Key_Notes#Twitter-Cards))
+* Generation of [Dublin Core](http://dublincore.org "Dublin Core Metadata Initiative") metadata. [more info](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Metadata_Generators_Key_Notes#Dublin-Core-metadata))
 * The various metadata types are generated for posts, pages, custom post types, attachment pages, category, tag, custom-taxonomy, author archives and the front page. Please note that not all generators produce metadata for all the aforementioned content types. In some cases, this happens because of limitations of the metadata specification. Moreover, the generators are constantly being improved so as to produce as complete metadata as possible.
 * Supports both the default 'latest posts' front page or static pages, which are used as the front page and as the 'latest posts' page.
-* Supports the generation of metadata for some types of embedded media (see below for more information). ([more info](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Metadata_Generators_Key_Notes#Metadata-for-embedded-media)
-* Supports the generation of metadata for *product* and *product group* pages for the *WooCommerce* and *Easy-Digital-Downloads* e-commerce plugins. (This featured is marked as `Work-In-Progress`) ([more info](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Metadata_Generators_Key_Notes#Metadata-for-products)
+* Supports the generation of metadata for some types of embedded media (see below for more information). ([more info](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Metadata_Generators_Key_Notes#Metadata-for-embedded-media))
+* Supports the generation of metadata for *product* and *product group* pages for the *WooCommerce* and *Easy-Digital-Downloads* e-commerce plugins. (This featured is marked as `Work-In-Progress`) ([more info](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Metadata_Generators_Key_Notes#Metadata-for-products))
 * The metadata generators support social media profile links for each author.
 * Publisher settings shared by all authors (currently only social media profile links).
 * Custom locale setting, which is used in all generated metadata.
@@ -115,8 +115,8 @@ Moreover, the [Add-Meta-Tags Cookbook](http://www.codetrax.org/projects/wp-add-m
 
 **Template Tags**
 
-* Some [metadata related template tags](http://www.codetrax.org/projects/wp-add-meta-tags/wiki#Template-Tags) have been included for use in the themes:
-* Semantic breadcrumb generator. Among other template tags, a basic template tag for the generation of a *semantic breadcrumb trail* for hierarchically structured content types, such as pages, has been included for use in your themes ([read more](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Semantic_Breadcrumbs))
+* Some [metadata related template tags](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Template_Tags) have been included for use in the themes:
+* Semantic breadcrumb generator. Among other template tags, a basic template tag for the generation of a *semantic breadcrumb trail* for hierarchically structured content types, such as pages, has been included for use in your themes ([how to use](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Semantic_Breadcrumbs))
 
 
 = Migrate to Add-Meta-Tags =
@@ -128,14 +128,9 @@ So, if you decided to use Add-Meta-Tags as you main SEO plugin or if you just wa
 
 = Translations =
 
-There is an ongoing effort to translate Add-Meta-Tags to as many languages as possible. The easiest way to contribute translations is to register to the [translations project](https://www.transifex.com/projects/p/add-meta-tags "Add-Meta-Tags translations project") at the Transifex service.
+Join a team at the [Add-Meta-Tags translations project](https://www.transifex.com/projects/p/add-meta-tags "Add-Meta-Tags translations project") and start translating right away from your browser.
 
-Once registered, join the team of the language translation you wish to contribute to. If a team does not exist for your language, be the first to create a translation team by requesting the language and start translating.
-
-
-= Code Contributions =
-
-If you are interested in contributing code to this project, please make sure you read the "Source Code Contributions":http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Source_Code_Contributions page, which contains all the necessary information about how to generate and send patches.
+Read more details about [how to translate Add-Meta-Tags](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Translations).
 
 
 = Support and Feedback =
@@ -147,17 +142,6 @@ However, the developer and the community of users share their knowledge in the [
 Also, make sure you read the [FAQ](http://wordpress.org/plugins/add-meta-tags/faq/ "Add-Meta-Tags FAQ"). An answer to your question might already exist there.
 
 Commercial grade support is not available.
-
-
-= Template Tags =
-
-The following *template tags* are available for use in your theme:
-
-1. `amt_content_description()` : prints the content's description as generated by Add-Meta-Tags.
-1. `amt_content_keywords()` : prints a comma-delimited list of the content's keywords as generated by Add-Meta-Tags.
-1. `amt_metadata_head()` : prints the full metadata for the head area as generated by Add-Meta-Tags.
-1. `amt_metadata_footer()` : prints the full metadata for the head area as generated by Add-Meta-Tags.
-1. `amt_breadcrumbs()` : prints an unordered list of semantic (Schema.org enabled) breadcrumbs.
 
 
 **More**
