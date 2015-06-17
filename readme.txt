@@ -228,6 +228,10 @@ This plugin is Free software. It is developed in the author's free time and is o
 
 You are expected to *collaborate* and act as a *contributor*. Detailed feedback is almost always the key for the quick resolution of any issue. Give the developer time to respond. Acting and expressing demands as if you are the customer or as if the developer is your personal assistant or employee is not a good way to ask for support. In fact, there is very little tolerance for such kind of behavior. Please, do not do it. Fixing all potential issues is just a matter of good collaboration.
 
+= Do you respect my privacy? =
+
+Absolutely. Add-Meta-Tags does not collect any data about the way the plugin is used by its users. Moreover, Add-Meta-Tags does not make any HTTP requests and does not use (or attempt to use) any resources stored remotely. Any statistical information about how you use the plugin is beyond the developer's interest. The entire source code is [https://bitbucket.org/gnotaras/wordpress-add-meta-tags/src](publicly available) for review.
+
 
 == Screenshots ==
 
@@ -260,7 +264,7 @@ Please check out the changelog of each release by following the links below. You
  - Added support for the [Sitelinks Search Box](https://developers.google.com/structured-data/slsb-overview).
  - A new **template tag** that generates a *semantic breadcrumb trail* (contains Schema.org microdata) has been implemented. Please check the description page for more information about how to use the template tag. (props to Nicolaie Szabadkai for ideas and feedback)
  - Added support for the customization (via filter) of the `itemref` attribute of the main Schema.org object. This way other entities, such as a semantic breadcrumb trail or semantic comments/reviews, can be connected to the main Schema.org entity of the web page. Check the information about the breadcrumbs on the description page, which also has all the itemref relevant information.
- - Added [example 16](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Add-Meta-Tags_Cookbook#Example-16-Extend-the-Organization-properties) to help users add extra social profile links, a postal address and some contact points to the `Organization` object. Make sure you check it out.
+ - Added [example](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Metadata_Customization#Extend-the-Organization-properties) to help users add extra social profile links, a postal address and some contact points to the `Organization` object. Make sure you check it out.
 - [2.8.6](http://www.codetrax.org/versions/286)
  - Added filter `amt_sanitize_description_extra` filter hook for user-defined description sanitization filtering.
  - Added filter `amt_sanitize_keywords_extra` filter hook for user-defined keywords sanitization filtering.
