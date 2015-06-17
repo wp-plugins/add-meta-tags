@@ -230,7 +230,7 @@ You are expected to *collaborate* and act as a *contributor*. Detailed feedback 
 
 = Do you respect my privacy? =
 
-Absolutely. Add-Meta-Tags does not collect any data about the way the plugin is used by its users. Moreover, Add-Meta-Tags does not make any HTTP requests and does not use (or attempt to use) any resources stored remotely. Any statistical information about how you use the plugin is beyond the developer's interest. The entire source code is [https://bitbucket.org/gnotaras/wordpress-add-meta-tags/src](publicly available) for review.
+Absolutely. Add-Meta-Tags does not collect any data about the way the plugin is used by its users. Moreover, Add-Meta-Tags does not make any HTTP requests and does not use (or attempt to use) any resources stored remotely. Any statistical information about how you use the plugin is beyond the developer's interest. The entire source code is [publicly available](https://bitbucket.org/gnotaras/wordpress-add-meta-tags/src) for review.
 
 
 == Screenshots ==
