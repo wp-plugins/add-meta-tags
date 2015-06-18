@@ -72,8 +72,8 @@ The main features of the plugin include:
 * Generation of [Dublin Core](http://dublincore.org "Dublin Core Metadata Initiative") metadata. ([more info](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Metadata_Generators_Key_Notes#Dublin-Core-metadata))
 * The various metadata types are generated for posts, pages, custom post types, attachment pages, category, tag, custom-taxonomy, author archives and the front page. Please note that not all generators produce metadata for all the aforementioned content types. In some cases, this happens because of limitations of the metadata specification. Moreover, the generators are constantly being improved so as to produce as complete metadata as possible.
 * Supports both the default 'latest posts' front page or static pages, which are used as the front page and as the 'latest posts' page.
-* Supports the generation of metadata for some types of embedded media (see below for more information). ([more info](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Metadata_Generators_Key_Notes#Metadata-for-embedded-media))
-* Supports the generation of metadata for *product* and *product group* pages for the *WooCommerce* and *Easy-Digital-Downloads* e-commerce plugins. (This featured is marked as `Work-In-Progress`) ([more info](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Metadata_Generators_Key_Notes#Metadata-for-products))
+* Supports the generation of [metadata for embedded media](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Metadata_Generators_Key_Notes#Metadata-for-embedded-media) (only a subset of the embeddable media in WordPress are supported)
+* Supports the generation of [metadata for *product* and *product group* pages](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Metadata_Generators_Key_Notes#Metadata-for-products) for the *WooCommerce* and *Easy-Digital-Downloads* e-commerce plugins. (This featured is marked as `Work-In-Progress`)
 * The metadata generators support social media profile links for each author.
 * Publisher settings shared by all authors (currently only social media profile links).
 * Custom locale setting, which is used in all generated metadata.
@@ -124,6 +124,11 @@ Moreover, the [Add-Meta-Tags Cookbook](http://www.codetrax.org/projects/wp-add-m
 Migrating to Add-Meta-Tags from any other plugin is extremely **easy**. In fact, if the 3rd party plugin stores data in [Custom Fields](https://codex.wordpress.org/Custom_Fields) provided by WordPress, no migration process needs to be done. Add-Meta-Tags can read data from multiple external fields by adding a small snippet of PHP code in the `functions.php` file of your theme.
 
 So, if you decided to use Add-Meta-Tags as you main SEO plugin or if you just want to test how it would work with the data you have inserted in another plugin, please check the [Migrating to Add-Meta-Tags](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Migrate_to_Add-Meta-Tags) section of the Add-Meta-Tags Cookbook.
+
+
+= Multilingual Content Support =
+
+Add-Meta-Tags can work well along with plugins that add multilingual support to WordPress. Please read the [technical notes regarding support for multilingual plugins](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Multilingual_Content_Support)
 
 
 = Translations =
