@@ -146,7 +146,7 @@ function amt_options_page() {
 
     <div class="wrap" style="background: #EEF6E6; padding: 1em 2em; border: 1px solid #E4E4E4;' . (($options["i_have_donated"]=="1") ? ' display: none;' : '') . '">
         <h2>'.__('Message from the author', 'add-meta-tags').'</h2>
-        <p style="font-size: 1.2em; padding-left: 2em;"><em>Add-Meta-Tags</em> is released under the terms of the <a href="http://www.apache.org/licenses/LICENSE-2.0.html">Apache License version 2</a> and, therefore, is <strong>free software</strong>.</p>
+        <p style="font-size: 1.2em; padding-left: 2em;"><em>Add-Meta-Tags</em> is released under the terms of the <a href="http://www.apache.org/licenses/LICENSE-2.0.html">Apache License version 2</a> and, therefore, is <strong>Free software</strong>.</p>
         <p style="font-size: 1.2em; padding-left: 2em;">However, a significant amount of <strong>time</strong> and <strong>energy</strong> has been put into developing this plugin, so, its production has not been free from cost. If you find this plugin useful and if it has helped your blog get indexed better and rank higher, I would appreciate an <a href="http://bit.ly/HvUakt">extra cup of coffee</a>.</p>
         <!--
         <p style="font-size: 1.2em; padding-left: 2em;">Donations in the following crypto currencies are also accepted and welcome. Send coins to the following addresses:</p>
@@ -237,7 +237,7 @@ function amt_options_page() {
             <fieldset>
                 <legend class="screen-reader-text"><span>'.__('Front Page Description', 'add-meta-tags').'</span></legend>
                 
-                <textarea name="site_description" id="site_description" cols="100" rows="2" class="code">' . esc_attr( stripslashes( $options["site_description"] ) ) . '</textarea>
+                <textarea name="site_description" id="site_description" cols="100" rows="2" class="code">' . esc_attr( stripslashes( amt_get_site_description($options) ) ) . '</textarea>
                 <br />
                 <label for="site_description">
                     '.__('Enter a short (150-250 characters long) description of your blog. This text will be used in the <em>description</em> and other similar metatags on the <strong>front page</strong>. If this is left empty, then the blog\'s <em>Tagline</em> from the <a href="options-general.php">General Options</a> will be used.', 'add-meta-tags').'
@@ -253,7 +253,7 @@ function amt_options_page() {
             <fieldset>
                 <legend class="screen-reader-text"><span>'.__('Front Page Keywords', 'add-meta-tags').'</span></legend>
                 
-                <textarea name="site_keywords" id="site_keywords" cols="100" rows="2" class="code">' . esc_attr( stripslashes( $options["site_keywords"] ) ) . '</textarea>
+                <textarea name="site_keywords" id="site_keywords" cols="100" rows="2" class="code">' . esc_attr( stripslashes( amt_get_site_keywords($options) ) ) . '</textarea>
                 <br />
                 <label for="site_keywords">'.__('Enter a comma-delimited list of keywords for your blog. These keywords will be used in the <em>keywords</em> meta tag on the <strong>front page</strong>. If this field is left empty, then all of your blog\'s <a href="edit-tags.php?taxonomy=category">categories</a> will be used as keywords for the <em>keywords</em> meta tag.', 'add-meta-tags').'</label>
                 <p><strong>'.__('Example', 'add-meta-tags').'</strong>: <code>'.__('keyword1, keyword2, keyword3', 'add-meta-tags').'</code></p>
@@ -271,7 +271,7 @@ function amt_options_page() {
             <fieldset>
                 <legend class="screen-reader-text"><span>'.__('Global Keywords', 'add-meta-tags').'</span></legend>
                 
-                <textarea name="global_keywords" id="global_keywords" cols="100" rows="2" class="code">' . esc_attr( stripslashes( $options["global_keywords"] ) ) . '</textarea>
+                <textarea name="global_keywords" id="global_keywords" cols="100" rows="2" class="code">' . esc_attr( stripslashes( amt_get_site_global_keywords($options) ) ) . '</textarea>
                 <br />
                 <label for="global_keywords">'.__('Enter a comma-delimited list of global keywords which will be added before the keywords of <strong>all</strong> posts and pages.', 'add-meta-tags').'</label>
                 <p><strong>'.__('Example', 'add-meta-tags').'</strong>: <code>'.__('keyword1, keyword2, keyword3', 'add-meta-tags').'</code></p>
@@ -630,7 +630,7 @@ function amt_options_page() {
             <fieldset>
                 <legend class="screen-reader-text"><span>'.__('Copyright URL', 'add-meta-tags').'</span></legend>
 
-                <input name="copyright_url" type="text" id="copyright_url" class="code" value="' . esc_url_raw( stripslashes( $options["copyright_url"] ) ) . '" size="100" maxlength="1024" />
+                <input name="copyright_url" type="text" id="copyright_url" class="code" value="' . esc_url_raw( stripslashes( amt_get_site_copyright_url($options) ) ) . '" size="100" maxlength="1024" />
                 <br />
                 <label for="copyright_url">
                 '.__('Enter an absolute URL to a document containing copyright and licensing information about your work. If this URL is set, the relevant meta tags will be added automatically on all the pages of your web site.', 'add-meta-tags').'
@@ -1067,7 +1067,7 @@ function amt_inner_metadata_box( $post ) {
                 <br />
                 '.__('This field accepts special notation of review related information. If this info is provided in the correct form, then Add-Meta-Tags treats your content as being a review of an item and generates proper Schema.org metadata. This field must contain a <code>__</code> (double underscore) delimited list of the following information (all in one line): a rating, the name of a valid schema.org <a href="http://schema.org/Thing">Thing</a> derivative object, a title, and a URL. For instance:', 'add-meta-tags').'
                 <br />
-                '.__('<code>4.2__Book__On the Origin of Species__http://en.wikipedia.org/wiki/On_the_Origin_of_Species</code>', 'add-meta-tags').'
+                <code>4.2__Book__On the Origin of Species__http://en.wikipedia.org/wiki/On_the_Origin_of_Species</code>
             </p>
         ');
 

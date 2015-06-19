@@ -168,7 +168,7 @@ function amt_add_schemaorg_metadata_footer( $post, $attachments, $embedded_media
     if ( is_front_page() ) {
 
         // WebSite
-        // Scope BEGIN: Organization: http://schema.org/WebSite
+        // Scope BEGIN: WebSite: http://schema.org/WebSite
         $metadata_arr[] = '<!-- Scope BEGIN: WebSite -->';
         $metadata_arr[] = '<span itemscope itemtype="http://schema.org/WebSite">';
         // name
@@ -205,7 +205,7 @@ function amt_add_schemaorg_metadata_footer( $post, $attachments, $embedded_media
         // Organization
         // Scope BEGIN: Organization: http://schema.org/Organization
         $metadata_arr[] = '<!-- Scope BEGIN: Organization -->';
-        $metadata_arr[] = '<span itemprop="publisher" itemscope itemtype="http://schema.org/Organization">';
+        $metadata_arr[] = '<span itemprop="publisher" itemscope itemtype="http://schema.org/Organization"' . amt_get_schemaorg_itemref('organization') . '>';
         // Get publisher metatags
         $metadata_arr = array_merge( $metadata_arr, amt_get_schemaorg_publisher_metatags( $options ) );
         // Scope END: Organization
@@ -229,7 +229,7 @@ function amt_add_schemaorg_metadata_footer( $post, $attachments, $embedded_media
         // Person
         // Scope BEGIN: Person: http://schema.org/Person
         $metadata_arr[] = '<!-- Scope BEGIN: Person -->';
-        $metadata_arr[] = '<span itemscope itemtype="http://schema.org/Person">';
+        $metadata_arr[] = '<span itemscope itemtype="http://schema.org/Person"' . amt_get_schemaorg_itemref('person_author') . '>';
         
         // Get author metatags
         $metadata_arr = array_merge( $metadata_arr, amt_get_schemaorg_author_metatags( $author->ID ) );
@@ -294,14 +294,7 @@ function amt_add_schemaorg_metadata_content_filter( $post_body ) {
 
         // Scope BEGIN: Product: http://schema.org/Product
         $metadata_arr[] = '<!-- Scope BEGIN: Product -->';
-        // Construct itemref attribute. Should contain a comma delimited list of IDs.
-        $itemref = apply_filters( 'amt_schemaorg_itemref_product', '' );
-        if ( ! empty($itemref) ) {
-            $itemref_attrib = ' itemref="' . $itemref . '"';
-        } else {
-            $itemref_attrib = '';
-        }
-        $metadata_arr[] = '<div itemscope itemtype="http://schema.org/Product"' . $itemref_attrib . '>';
+        $metadata_arr[] = '<div itemscope itemtype="http://schema.org/Product"' . amt_get_schemaorg_itemref('product') . '>';
 
         // URL - Uses amt_get_permalink_for_multipage()
         $metadata_arr[] = '<meta itemprop="url" content="' . esc_url_raw( amt_get_permalink_for_multipage($post) ) . '" />';
@@ -409,40 +402,19 @@ function amt_add_schemaorg_metadata_content_filter( $post_body ) {
 
             // Scope BEGIN: ImageObject: http://schema.org/ImageObject
             $metadata_arr[] = '<!-- Scope BEGIN: ImageObject -->';
-            // Construct itemref attribute. Should contain a comma delimited list of IDs.
-            $itemref = apply_filters( 'amt_schemaorg_itemref_attachment_image', '' );
-            if ( ! empty($itemref) ) {
-                $itemref_attrib = ' itemref="' . $itemref . '"';
-            } else {
-                $itemref_attrib = '';
-            }
-            $metadata_arr[] = '<div itemscope itemtype="http://schema.org/ImageObject"' . $itemref_attrib . '>';
+            $metadata_arr[] = '<div itemscope itemtype="http://schema.org/ImageObject"' . amt_get_schemaorg_itemref('attachment_image') . '>';
 
         } elseif ( 'video' == $attachment_type ) {
 
             // Scope BEGIN: VideoObject: http://schema.org/VideoObject
             $metadata_arr[] = '<!-- Scope BEGIN: VideoObject -->';
-            // Construct itemref attribute. Should contain a comma delimited list of IDs.
-            $itemref = apply_filters( 'amt_schemaorg_itemref_attachment_video', '' );
-            if ( ! empty($itemref) ) {
-                $itemref_attrib = ' itemref="' . $itemref . '"';
-            } else {
-                $itemref_attrib = '';
-            }
-            $metadata_arr[] = '<div itemscope itemtype="http://schema.org/VideoObject"' . $itemref_attrib . '>';
+            $metadata_arr[] = '<div itemscope itemtype="http://schema.org/VideoObject"' . amt_get_schemaorg_itemref('attachment_video') . '>';
 
         } elseif ( 'audio' == $attachment_type ) {
 
             // Scope BEGIN: AudioObject: http://schema.org/AudioObject
             $metadata_arr[] = '<!-- Scope BEGIN: AudioObject -->';
-            // Construct itemref attribute. Should contain a comma delimited list of IDs.
-            $itemref = apply_filters( 'amt_schemaorg_itemref_attachment_audio', '' );
-            if ( ! empty($itemref) ) {
-                $itemref_attrib = ' itemref="' . $itemref . '"';
-            } else {
-                $itemref_attrib = '';
-            }
-            $metadata_arr[] = '<div itemscope itemtype="http://schema.org/AudioObject"' . $itemref_attrib . '>';
+            $metadata_arr[] = '<div itemscope itemtype="http://schema.org/AudioObject"' . amt_get_schemaorg_itemref('attachment_audio') . '>';
 
         } else {
             // we do not currently support other attachment types, so we stop processing here
@@ -454,7 +426,7 @@ function amt_add_schemaorg_metadata_content_filter( $post_body ) {
         // Publisher
         // Scope BEGIN: Organization: http://schema.org/Organization
         $metadata_arr[] = '<!-- Scope BEGIN: Organization -->';
-        $metadata_arr[] = '<span itemprop="publisher" itemscope itemtype="http://schema.org/Organization">';
+        $metadata_arr[] = '<span itemprop="publisher" itemscope itemtype="http://schema.org/Organization"' . amt_get_schemaorg_itemref('organization') . '>';
         // Get publisher metatags
         $metadata_arr = array_merge( $metadata_arr, amt_get_schemaorg_publisher_metatags( $options, $post->post_author ) );
         // Scope END: Organization
@@ -463,7 +435,7 @@ function amt_add_schemaorg_metadata_content_filter( $post_body ) {
         // Author
         // Scope BEGIN: Person: http://schema.org/Person
         $metadata_arr[] = '<!-- Scope BEGIN: Person -->';
-        $metadata_arr[] = '<span itemprop="author" itemscope itemtype="http://schema.org/Person">';
+        $metadata_arr[] = '<span itemprop="author" itemscope itemtype="http://schema.org/Person"' . amt_get_schemaorg_itemref('person_author') . '>';
         // Get author metatags
         $metadata_arr = array_merge( $metadata_arr, amt_get_schemaorg_author_metatags( $post->post_author ) );
         // Scope END: Person
@@ -517,6 +489,9 @@ function amt_add_schemaorg_metadata_content_filter( $post_body ) {
 
         }
 
+        // Filtering of the generated Schema.org metadata
+        $metadata_arr = apply_filters( 'amt_schemaorg_metadata_attachment', $metadata_arr );
+
 
     // Content
     } else {
@@ -546,19 +521,12 @@ function amt_add_schemaorg_metadata_content_filter( $post_body ) {
 
         // Scope BEGIN: Article: http://schema.org/Article
         $metadata_arr[] = '<!-- Scope BEGIN: ' . esc_attr($main_content_object) . ' -->';
-        // Construct itemref attribute. Should contain a comma delimited list of IDs.
-        $itemref = apply_filters( 'amt_schemaorg_itemref_content', '' );
-        if ( ! empty($itemref) ) {
-            $itemref_attrib = ' itemref="' . $itemref . '"';
-        } else {
-            $itemref_attrib = '';
-        }
-        $metadata_arr[] = '<div itemscope itemtype="http://schema.org/' . esc_attr($main_content_object) . '"' . $itemref_attrib . '>';
+        $metadata_arr[] = '<div itemscope itemtype="http://schema.org/' . esc_attr($main_content_object) . '"' . amt_get_schemaorg_itemref('content') . '>';
 
         // Publisher
         // Scope BEGIN: Organization: http://schema.org/Organization
         $metadata_arr[] = '<!-- Scope BEGIN: Organization -->';
-        $metadata_arr[] = '<span itemprop="publisher" itemscope itemtype="http://schema.org/Organization">';
+        $metadata_arr[] = '<span itemprop="publisher" itemscope itemtype="http://schema.org/Organization"' . amt_get_schemaorg_itemref('organization') . '>';
         // Get publisher metatags
         $metadata_arr = array_merge( $metadata_arr, amt_get_schemaorg_publisher_metatags( $options, $post->post_author ) );
         // Scope END: Organization
@@ -567,7 +535,7 @@ function amt_add_schemaorg_metadata_content_filter( $post_body ) {
         // Author
         // Scope BEGIN: Person: http://schema.org/Person
         $metadata_arr[] = '<!-- Scope BEGIN: Person -->';
-        $metadata_arr[] = '<span itemprop="author" itemscope itemtype="http://schema.org/Person">';
+        $metadata_arr[] = '<span itemprop="author" itemscope itemtype="http://schema.org/Person"' . amt_get_schemaorg_itemref('person_author') . '>';
         // Get publisher metatags
         $metadata_arr = array_merge( $metadata_arr, amt_get_schemaorg_author_metatags( $post->post_author ) );
         // Scope END: Person
@@ -944,7 +912,7 @@ function amt_get_schemaorg_publisher_metatags( $options, $author_id=null ) {
     $metadata_arr[] = '<meta itemprop="name" content="' . esc_attr( get_bloginfo('name') ) . '" />';
     // description
     // First use the site description from the Add-Meta-Tags settings
-    $site_description = $options["site_description"];
+    $site_description = amt_get_site_description($options);
     if ( empty($site_description) ) {
         // Alternatively, use the blog description
         // Here we sanitize the provided description for safety
@@ -1071,7 +1039,7 @@ function amt_add_schemaorg_metadata_comment_filter( $comment_text ) {
 
     // Comment Author
     $metadata_arr[] = '<!-- Scope BEGIN: Person -->';
-    $metadata_arr[] = '<span itemprop="creator" itemscope itemtype="http://schema.org/Person">';
+    $metadata_arr[] = '<span itemprop="creator" itemscope itemtype="http://schema.org/Person"' . amt_get_schemaorg_itemref('person_commenter') . '>';
     // name
     $metadata_arr[] = '<meta itemprop="name" content="' . esc_attr( $comment->comment_author ) . '" />';
     // url

@@ -90,7 +90,7 @@ function amt_add_basic_metadata_head( $post, $attachments, $embedded_media, $opt
         if ($do_description) {
             // Use the site description from the Add-Meta-Tags settings.
             // Fall back to the blog description.
-            $site_description = $options["site_description"];
+            $site_description = amt_get_site_description($options);
             if ( empty($site_description ) ) {
                 // Alternatively, use the blog description
                 // Here we sanitize the provided description for safety
@@ -107,7 +107,7 @@ function amt_add_basic_metadata_head( $post, $attachments, $embedded_media, $opt
         if ($do_keywords) {
             // Use the site keywords from the Add-Meta-Tags settings.
             // Fall back to the blog categories.
-            $site_keywords = $options["site_keywords"];
+            $site_keywords = amt_get_site_keywords($options);
             if ( empty( $site_keywords ) ) {
                 // Alternatively, use the blog categories
                 // Here we sanitize the provided keywords for safety
@@ -319,8 +319,12 @@ function amt_add_basic_metadata_head( $post, $attachments, $embedded_media, $opt
     }
 
     // On every page print the copyright head link
-    if ( ! empty( $options["copyright_url"] ) ) {
-        $metadata_arr[] = '<link rel="copyright" type="text/html" title="' . esc_attr( get_bloginfo('name') ) . ' Copyright Information" href="' . esc_url_raw( $options["copyright_url"] ) . '" />';
+    $copyright_url = amt_get_site_copyright_url($options);
+    if ( empty($copyright_url)) {
+        $copyright_url = trailingslashit( get_bloginfo('url') );
+    }
+    if ( ! empty($copyright_url) ) {
+        $metadata_arr[] = '<link rel="copyright" type="text/html" title="' . esc_attr( get_bloginfo('name') ) . ' Copyright Information" href="' . esc_url_raw( $copyright_url ) . '" />';
     }
 
     // Filtering of the generated basic metadata
