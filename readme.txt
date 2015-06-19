@@ -22,7 +22,7 @@ It is actively maintained since 2006 (historical [Add-Meta-Tags home](http://www
 
 = Highlights of the latest releases =
 
-- Since v2.8.9 experimental build-in support the popular multilingual plugins WPML and Polylang has been implemented.
+- Since v2.8.9 experimental build-in support for the popular multilingual plugins WPML and Polylang has been implemented.
 - Since v2.8.7 a basic template tag for the generation of a *semantic breadcrumb trail* for hierarchically structured content types, such as pages, is available for use in your themes ([more info](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Semantic_Breadcrumbs)).
 - Since v2.8.0 Add-Meta-Tags supports the generation of metadata for *product* and *product group* pages for the *WooCommerce* and *Easy-Digital-Downloads* e-commerce plugins ([more info](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Metadata_Generators_Key_Notes#Metadata-for-products)).
 
