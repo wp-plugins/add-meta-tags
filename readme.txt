@@ -126,11 +126,6 @@ Migrating to Add-Meta-Tags from any other plugin is extremely **easy**. In fact,
 So, if you decided to use Add-Meta-Tags as you main SEO plugin or if you just want to test how it would work with the data you have inserted in another plugin, please check the [Migrating to Add-Meta-Tags](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Migrate_to_Add-Meta-Tags) section of the Add-Meta-Tags Cookbook.
 
 
-= Multilingual Content Support =
-
-Add-Meta-Tags can work well along with plugins that add multilingual support to WordPress. Please read the [technical notes regarding support for multilingual plugins](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Multilingual_Content_Support)
-
-
 = Translations =
 
 Join a team at the [Add-Meta-Tags translations project](https://www.transifex.com/projects/p/add-meta-tags "Add-Meta-Tags translations project") and start translating right away from your browser.
