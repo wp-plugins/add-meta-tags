@@ -257,7 +257,7 @@ In 2.9 publisher social media profile links can no longer be set in the WordPres
 
 = 2.8.9 =
 
-A WPML language configuration file has been added. Please re-check your WPML and Polylang configuration after upgrading.
+NOTE: A WPML language configuration file has been added. Please re-check your WPML and Polylang configuration after upgrading.
 
 
 == Changelog ==
