@@ -255,6 +255,10 @@ Screenshots as of v2.4.0
 
 In 2.9 publisher social media profile links can no longer be set in the WordPress user profile page. Please move such information to the `Publisher Settings` section of Add-Meta-Tags settings page (Settings->Metadata).
 
+= 2.8.9 =
+
+A WPML language configuration file has been added. Please re-check your WPML and Polylang configuration after upgrading.
+
 
 == Changelog ==
 
