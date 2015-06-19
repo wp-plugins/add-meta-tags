@@ -261,7 +261,7 @@ In 2.9 publisher social media profile links can no longer be set in the WordPres
 Please check out the changelog of each release by following the links below. You can also check the [roadmap](http://www.codetrax.org/projects/wp-add-meta-tags/roadmap "Add-Meta-Tags Roadmap") regarding future releases of the plugin.
 
 - [2.8.9](http://www.codetrax.org/versions/289)
- - Improved support for multilingual plugins WPML and Polylang. (props to Eduardo Molon for valuable feedback.)
+ - Improved support for the multilingual plugins WPML and Polylang. (props to Eduardo Molon for valuable feedback.)
  - Various minor bug fixes and improvements.
 - [2.8.8](http://www.codetrax.org/versions/288)
  - New experimental metabox feature: Express Review (needs to be enabled in the settings). Adds a metabox field which accepts review related information in special notation and generates a schema.org Review instead of Article. Only for advanced users. Feedback is welcome.
