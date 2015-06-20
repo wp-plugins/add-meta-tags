@@ -803,6 +803,7 @@ function amt_get_metadata_metabox_permissions() {
         'news_keywords_box_capability' => 'edit_posts',
         'full_metatags_box_capability' => 'edit_posts',
         'image_url_box_capability' => 'edit_posts',
+        'content_locale_box_capability' => 'edit_posts',
         'express_review_box_capability' => 'edit_posts',
         'referenced_list_box_capability' => 'edit_posts'
     );
@@ -1037,6 +1038,41 @@ function amt_get_post_meta_image_url($post_id) {
     // External fields - Allow filtering
     $external_fields = array();
     $external_fields = apply_filters( 'amt_external_image_url_fields', $external_fields, $post_id );
+    // Merge external fields to our supported custom fields
+    $supported_custom_fields = array_merge( $supported_custom_fields, $external_fields );
+
+    // Get an array of all custom fields names of the post
+    $custom_fields = get_post_custom_keys( $post_id );
+    if ( empty( $custom_fields ) ) {
+        // Just return an empty string if no custom fields have been associated with this content.
+        return '';
+    }
+
+    // Try our fields
+    foreach( $supported_custom_fields as $sup_field ) {
+        // If such a field exists in the db, return its content as the news keywords.
+        if ( in_array( $sup_field, $custom_fields ) ) {
+            return get_post_meta( $post_id, $sup_field, true );
+        }
+    }
+
+    //Return empty string if all fail
+    return '';
+}
+
+
+/**
+ * Helper function that returns the value of the custom field that contains
+ * a locale override for the content.
+ * The default field name for the 'content locale override' is ``_amt_content_locale``.
+ * No need to migrate from older field name.
+ */
+function amt_get_post_meta_content_locale($post_id) {
+    // Internal fields - order matters
+    $supported_custom_fields = array( '_amt_content_locale' );
+    // External fields - Allow filtering
+    $external_fields = array();
+    $external_fields = apply_filters( 'amt_external_content_locale_fields', $external_fields, $post_id );
     // Merge external fields to our supported custom fields
     $supported_custom_fields = array_merge( $supported_custom_fields, $external_fields );
 
@@ -1619,15 +1655,55 @@ function amt_get_language_site($options) {
 
 
 // Returns content locale
-function amt_get_language_content($options) {
+// NOTE: SHOULD NOT BE USED ON ARCHIVES
+function amt_get_language_content($options, $post) {
     $language = get_bloginfo('language');
     // If set, the 'global_locale' setting overrides WordPress.
     if ( ! empty( $options["global_locale"] ) ) {
         $language = $options["global_locale"];
     }
+    // If set, the locale setting from the Metabox overrides all other local settings.
+    $metabox_locale = amt_get_post_meta_content_locale($post->ID);
+    if ( ! empty( $metabox_locale ) ) {
+        $language = $metabox_locale;
+    }
     // Allow filtering of the content language
-    $language = apply_filters( 'amt_language_content', $language );
+    $language = apply_filters( 'amt_language_content', $language, $post );
     return $language;
+}
+
+
+// Returns the hreflang attribute's value
+function amt_get_the_hreflang($locale, $options) {
+    $output = '';
+    // Convert underscore to dash
+    $locale = str_replace('_', '-', $locale);
+    // Return locale if no further processing is needed
+    if ( $options['hreflang_strip_region'] == '0' ) {
+        $output = $locale;
+    } else {
+        // Strip region code
+        $locale_parts = explode('-', $locale);
+        if ( count($locale_parts) == 1 ) {
+            $output = $locale;
+        } elseif ( count($locale_parts) > 2 ) {
+            $output = $locale_parts[0] . '-' . $locale_parts[1];
+        } elseif ( count($locale_parts) == 2 ) {
+            // In this case we need to understand whether locale is
+            // language_TERRITORY or language_Script_TERRITORY
+            // If the last part is a two letter string, we assume it's the region and strip it
+            if ( strlen($locale_parts[1]) == 2 ) {
+                // We assume this is a region code and strip it
+                $output = $locale_parts[0];
+            } else {
+                // We assume that the locale consist only of language_Script
+                $output = $locale_parts[0] . '-' . $locale_parts[1];
+            }
+        }
+    }
+    // Allow filtering
+    $output = apply_filters( 'amt_get_the_hreflang', $output );
+    return $output;
 }
 
 

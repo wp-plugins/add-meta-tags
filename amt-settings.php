@@ -54,7 +54,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 function amt_get_default_options() {
     return array(
-        "settings_version"  => 12,       // IMPORTANT: SETTINGS UPGRADE: Every time settings are added or removed this has to be incremented.
+        "settings_version"  => 13,       // IMPORTANT: SETTINGS UPGRADE: Every time settings are added or removed this has to be incremented.
         "site_description"  => "",      // Front page description
         "site_keywords"     => "",      // Front page keywords
         "global_keywords"   => "",      // These keywords are added to the 'keywords' meta tag on all posts and pages
@@ -80,6 +80,7 @@ function amt_get_default_options() {
         "metabox_enable_title"           => "1",
         "metabox_enable_news_keywords"   => "0",
         "metabox_enable_full_metatags"   => "0",
+        "metabox_enable_content_locale"  => "0",
         "metabox_enable_image_url"   => "0",
         "metabox_enable_express_review" => "0",
         "metabox_enable_referenced_list" => "0",
@@ -89,6 +90,8 @@ function amt_get_default_options() {
         "social_main_googleplus_publisher_profile_url" => "",
         "social_main_twitter_publisher_username" => "",
         "global_locale" => "",
+        "generate_hreflang_links" => "0",
+        "hreflang_strip_region" => "0",
         "has_https_access" => "0",
         "copyright_url"     => "",
         "default_image_url" => "",
@@ -201,6 +204,12 @@ function amt_plugin_upgrade() {
 
     // Version 2.8.1 (settings_version 11->12)
     // Added "metabox_enable_express_review"
+    // No migrations required. Addition takes place in (1).
+
+    // Version 2.8.10 (settings_version 12->13)
+    // Added "metabox_enable_content_locale"
+    // Added "generate_hreflang_links"
+    // Added "hreflang_strip_region"
     // No migrations required. Addition takes place in (1).
 
     // 3) Clean stored options.

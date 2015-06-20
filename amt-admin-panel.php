@@ -528,6 +528,11 @@ function amt_options_page() {
                 '.__('Global image override.', 'add-meta-tags').'
                 </label></p>
 
+                <p><input id="metabox_enable_content_locale" type="checkbox" value="1" name="metabox_enable_content_locale" '. (($options["metabox_enable_content_locale"]=="1") ? 'checked="checked"' : '') .'" />
+                <label for="metabox_enable_content_locale">
+                '.__('Content locale override. (Not to be used in conjunction with a multilingual plugin.) ', 'add-meta-tags').'
+                </label></p>
+
                 <p><input id="metabox_enable_express_review" type="checkbox" value="1" name="metabox_enable_express_review" '. (($options["metabox_enable_express_review"]=="1") ? 'checked="checked"' : '') .'" />
                 <label for="metabox_enable_express_review">
                 '.__('Express review. (Experimental feature. For advanced users only.)', 'add-meta-tags').'
@@ -599,13 +604,25 @@ function amt_options_page() {
             <fieldset>
                 <legend class="screen-reader-text"><span>'.__('Locale', 'add-meta-tags').'</span></legend>
 
-                <input name="global_locale" type="text" id="global_locale" class="code" value="' . esc_attr( stripslashes( $options["global_locale"] ) ) . '" size="10" maxlength="24" />
+                <input name="global_locale" type="text" id="global_locale" class="code" value="' . esc_attr( stripslashes( $options["global_locale"] ) ) . '" size="20" maxlength="32" />
                 <br />
                 <label for="global_locale">
-                '.__('Enter a locale which will be used globally in the generated metadata overriding the default locale as returned by WordPress. Filling in this setting is only recommended if WordPress does not return a locale in the form of <code>language_TERRITORY</code>.', 'add-meta-tags').'
+                '.__('Enter a locale which will be used globally in the generated metadata overriding the default locale as returned by WordPress. Filling in this setting is only recommended if WordPress does not return a locale in the form of <code>language_TERRITORY</code>. This feature should not be used in conjunction with a multilingual plugin in order to avoid the potential generation of meta tags with invalid locale.', 'add-meta-tags').'
                 </label>
                 <p><strong>'.__('Example', 'add-meta-tags').'</strong>: <code>en_US</code></p>
                 <br />
+
+                <input id="generate_hreflang_links" type="checkbox" value="1" name="generate_hreflang_links" '. (($options["generate_hreflang_links"]=="1") ? 'checked="checked"' : '') .'" />
+                <label for="generate_hreflang_links">'.__('Enable the generation of a <code>link</code> element with the <code>hreflang</code> attribute.', 'add-meta-tags').'</label>
+                <p>'.__('If this feature is enabled, an HTML <code>link</code> element containing the proper hreflang attribute is added to the head section of the HTML page. The value of the hreflang attribute is determined by the locale of the content. This feature should not be used in conjunction with a multilingual plugin in order to avoid the potential generation of invalid hreflang links.)', 'add-meta-tags').'</p>
+                <br />
+
+                <input id="hreflang_strip_region" type="checkbox" value="1" name="hreflang_strip_region" '. (($options["hreflang_strip_region"]=="1") ? 'checked="checked"' : '') .'" />
+                <label for="hreflang_strip_region">'.__('Strip region code from the hreflang attribute.', 'add-meta-tags').'</label>
+                <p>'.__('By default, Add-Meta-Tags uses the locale, which is usually required to be set in the form <code>language_TERRITORY</code> so as to comply with the various metadata specifications, as the value of the hreflang attribute. However, Google and possibly other services might interpret the regional information of the hreflang attribute as region targeting. If your content is not targeted to users in a specific region, it might be a good idea to strip regional information from this attribute by enabling this option.', 'add-meta-tags').'</p>
+                <p>'.__('For instance, if your locale is <code>en_US</code>, by enabling this option you force the hreflang attribute to be <code>en</code>. In the same way, if the locale is in the form <code>language_Script_TERRITORY</code>, for example <code>zh_Hans_TW</code>, by enabling this option the hreflang attribute becomes <code>zh-Hans</code>.', 'add-meta-tags').'</p>
+                <br />
+
             </fieldset>
             </td>
             </tr>
@@ -1043,13 +1060,35 @@ function amt_inner_metadata_box( $post ) {
         print('
             <p>
                 <label for="amt_custom_image_url"><strong>'.__('Image URL', 'add-meta-tags').'</strong>:</label>
-                <input type="text" class="code" style="width: 99%" id="amt_custom_image_url" name="amt_custom_image_url" value="' . esc_attr( stripslashes( $custom_image_url_value ) ) . '" />
+                <input type="text" class="code" style="width: 99%" id="amt_custom_image_url" name="amt_custom_image_url" value="' . esc_url_raw( stripslashes( $custom_image_url_value ) ) . '" />
                 <br>
                 '.__('Enter an image URL to override all media related meta tags.', 'add-meta-tags').'
             </p>
         ');
 
     }
+
+
+    // Content locale override
+    
+    // 'content_locale' box permission check (can be user customized via filter).
+    if ( $options['metabox_enable_content_locale'] == '1' && current_user_can( $metabox_permissions['content_locale_box_capability'] ) ) {
+        $metabox_has_features = true;
+
+        // Retrieve the field data from the database.
+        $custom_content_locale_value = amt_get_post_meta_content_locale( $post->ID );
+
+        print('
+            <p>
+                <label for="amt_custom_content_locale"><strong>'.__('Content locale', 'add-meta-tags').'</strong>:</label>
+                <input type="text" class="code" style="width: 99%" id="amt_custom_content_locale" name="amt_custom_content_locale" value="' . esc_attr( stripslashes( $custom_content_locale_value ) ) . '" />
+                <br>
+                '.__('Override the default locale setting by entering a custom locale for this content in the form <code>language_TERRITORY</code>, for example: <code>en_US</code>.', 'add-meta-tags').'
+            </p>
+        ');
+
+    }
+
 
     // Express review
 
@@ -1176,6 +1215,10 @@ function amt_save_postdata( $post_id, $post ) {
     if ( isset( $_POST['amt_custom_image_url'] ) ) {
         $image_url_value = esc_url_raw( stripslashes( $_POST['amt_custom_image_url'] ) );
     }
+    // Content locale
+    if ( isset( $_POST['amt_custom_content_locale'] ) ) {
+        $content_locale_value = esc_attr( stripslashes( $_POST['amt_custom_content_locale'] ) );
+    }
     // Express review
     if ( isset( $_POST['amt_custom_express_review'] ) ) {
         $express_review_value = esc_textarea( wp_kses( stripslashes( $_POST['amt_custom_express_review'] ), array() ) );
@@ -1195,6 +1238,7 @@ function amt_save_postdata( $post_id, $post ) {
     $amt_newskeywords_field_name = '_amt_news_keywords';
     $amt_full_metatags_field_name = '_amt_full_metatags';
     $amt_image_url_field_name = '_amt_image_url';
+    $amt_content_locale_field_name = '_amt_content_locale';
     $amt_express_review_field_name = '_amt_express_review';
     $amt_referenced_list_field_name = '_amt_referenced_list';
 
@@ -1260,6 +1304,15 @@ function amt_save_postdata( $post_id, $post ) {
             delete_post_meta($post_id, $amt_image_url_field_name);
         } else {
             update_post_meta($post_id, $amt_image_url_field_name, $image_url_value);
+        }
+    }
+
+    // Content locale
+    if ( $options['metabox_enable_content_locale'] == '1' && current_user_can( $metabox_permissions['content_locale_box_capability'] ) ) {
+        if ( empty($content_locale_value) ) {
+            delete_post_meta($post_id, $amt_content_locale_field_name);
+        } else {
+            update_post_meta($post_id, $amt_content_locale_field_name, $content_locale_value);
         }
     }
 
