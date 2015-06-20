@@ -257,7 +257,7 @@ In 2.9 publisher social media profile links can no longer be set in the WordPres
 
 = 2.8.9 =
 
-**Note**: Since v2.8.9, a WPML language configuration file ships with Add-Meta-Tags for out of the box interoperability with the WPML and Polylang multilingual plugins. Although not necessary, you should review the configuration of these plugins after upgrading Add-Meta-Tags.
+**Note**: Since v2.8.9, a WPML language configuration file ships with Add-Meta-Tags for out of the box interoperability with the WPML and Polylang multilingual plugins. Although not necessary, if you use any of these plugins, you should review the configuration of these plugins after upgrading Add-Meta-Tags.
 
 
 == Changelog ==
