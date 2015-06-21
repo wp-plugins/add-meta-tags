@@ -3,7 +3,7 @@
 Plugin Name: Add Meta Tags
 Plugin URI: http://www.g-loaded.eu/2006/01/05/add-meta-tags-wordpress-plugin/
 Description: Add basic meta tags and also Opengraph, Schema.org Microdata, Twitter Cards and Dublin Core metadata to optimize your web site for better SEO.
-Version: 2.8.10
+Version: 2.8.11
 Author: George Notaras
 Author URI: http://www.g-loaded.eu/
 License: Apache License v2
@@ -128,6 +128,29 @@ function amt_custom_title_tag($title) {
     return $title;
 }
 add_filter('wp_title', 'amt_custom_title_tag', 1000);
+
+
+/**
+ * Sets the correct lang attribute of the html element of the page,
+ * according to the content's locale.
+ */
+function amt_set_html_lang_attribute( $lang ) {
+    //var_dump($lang);
+    $locale = '';
+    $options = get_option('add_meta_tags_opts');
+    if ( is_singular() ) {
+        $post = get_queried_object();
+        $locale = str_replace( '_', '-', amt_get_language_content($options, $post) );
+    } else {
+        $locale = str_replace( '_', '-', amt_get_language_site($options) );
+    }
+    if ( ! empty($locale) ) {
+        // Replace WordPress locale with ours. (even if it's the same)
+        $lang = str_replace( get_bloginfo('language'), $locale, $lang );
+    }
+    return $lang;
+}
+add_filter( 'language_attributes', 'amt_set_html_lang_attribute' );
 
 
 /**

@@ -1,10 +1,10 @@
 === Add Meta Tags ===
 Contributors: gnotaras
 Donate link: http://bit.ly/HvUakt
-Tags: amt, meta, metadata, seo, optimize, ranking, description, keywords, metatag, schema, opengraph, dublin core, schema.org, microdata, google, twitter cards, google plus, yahoo, bing, search engine optimization, rich snippets, semantic, structured, meta tags, product, woocommerce, edd, breadcrumbs, breadcrumb trail
+Tags: amt, meta, metadata, seo, optimize, ranking, description, keywords, metatag, schema, opengraph, dublin core, schema.org, microdata, google, twitter cards, google plus, yahoo, bing, search engine optimization, rich snippets, semantic, structured, meta tags, product, woocommerce, edd, breadcrumbs, breadcrumb trail, multilingual, multilanguage, hreflang
 Requires at least: 3.1.0
 Tested up to: 4.2
-Stable tag: 2.8.10
+Stable tag: 2.8.11
 License: Apache License v2
 License URI: http://www.apache.org/licenses/LICENSE-2.0.txt
 
@@ -77,7 +77,8 @@ The main features of the plugin include:
 * Supports the generation of [metadata for *product* and *product group* pages](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Metadata_Generators_Key_Notes#Metadata-for-products) for the *WooCommerce* and *Easy-Digital-Downloads* e-commerce plugins. (This featured is marked as `Work-In-Progress`)
 * The metadata generators support social media profile links for each author.
 * Publisher settings shared by all authors (currently only social media profile links).
-* Custom locale setting, which is used in all generated metadata.
+* Custom locale setting, which is used in all generated metadata. (Should not be used in conjuction with a multilingual plugin.)
+* Generation of a HTML link with the hreflang attribute according to the locale of the content. (Should not be used in conjuction with a multilingual plugin.)
 
 **Additional Features**
 
@@ -103,6 +104,7 @@ The generation of metadata is automatic. However, customization by the user is p
 * News keywords. ([read more](http://support.google.com/news/publisher/bin/answer.py?hl=en&answer=68297))
 * Full meta tags box, which can be used to enter full meta tags (`<meta>` and `<link>` elements are allowed by default), which are specific to the post.
 * Global image override field, which accepts an image URL, which, if set, overrides the generation of the metadata for any other media file that has been attached to the post.
+* Content locale override, which lets users override the locale on a per post basis. (Should not be used in conjuction with a multilingual plugin.)
 * Express review, which adds a field that accepts review related information using special notation, which results in the generation of a [Review](http://schema.org/Review) schema.org entity instead of [Article](http://schema.org/Article). This feature is experimental and should be used only by advanced users for testing.
 * Referenced items. (Note: Using this very experimental feature is not recommended.)
 
@@ -129,7 +131,9 @@ So, if you decided to use Add-Meta-Tags as you main SEO plugin or if you just wa
 
 = Multilingual Content Support =
 
-Add-Meta-Tags can work well along with plugins that add multilingual support to WordPress. Please read the [technical notes regarding support for multilingual plugins](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Multilingual_Content_Support)
+Add-Meta-Tags can work well along with plugins that add multilingual support to WordPress. Moreover, all the features, which could assist authors with publishing content in multiple languages, have been implemented. However, these features are not suitable for publishing translations of the same content. For this purpose, using a multilingual plugin is highly recommended.
+
+Please read the [technical notes regarding support for multilingual plugins](http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Multilingual_Content_Support)
 
 
 = Translations =
@@ -255,7 +259,7 @@ Screenshots as of v2.4.0
 
 In 2.9 publisher social media profile links can no longer be set in the WordPress user profile page. Please move such information to the `Publisher Settings` section of Add-Meta-Tags settings page (Settings->Metadata).
 
-= 2.8.10 =
+= 2.8.11 =
 
 Note: Since v2.8.9, a WPML language configuration file ships with Add-Meta-Tags for out of the box interoperability with the WPML and Polylang multilingual plugins. Although not necessary, it is recommended to review the configuration of these plugins after upgrading Add-Meta-Tags.
 
@@ -264,6 +268,10 @@ Note: Since v2.8.9, a WPML language configuration file ships with Add-Meta-Tags 
 
 Please check out the changelog of each release by following the links below. You can also check the [roadmap](http://www.codetrax.org/projects/wp-add-meta-tags/roadmap "Add-Meta-Tags Roadmap") regarding future releases of the plugin.
 
+- [2.8.11](http://www.codetrax.org/versions/292)
+ - The `lang` attribute of the `html` element of the web page is now set according to the content's locale. (props to Tom [ecdltf] for valuable feedback.)
+ - Custom field data is no longer used if the relevant metabox feature has been deactivated. (props to Tom [ecdltf] for ideas and feedback.)
+ - Minor other improvements.
 - [2.8.10](http://www.codetrax.org/versions/290)
  - Improved support for multilingual web sites that do not use a multilingual plugin.
  - Added new metabox feature: 'content locale override' (needs to be enabled in the settings), which can be used to override the locale on a per post basis. (Not to be used in conjunction with a multilingual plugin.) 
