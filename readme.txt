@@ -269,7 +269,7 @@ Note: Since v2.8.9, a WPML language configuration file ships with Add-Meta-Tags 
 Please check out the changelog of each release by following the links below. You can also check the [roadmap](http://www.codetrax.org/projects/wp-add-meta-tags/roadmap "Add-Meta-Tags Roadmap") regarding future releases of the plugin.
 
 - [2.8.12](http://www.codetrax.org/versions/293)
- - Added option that activates/deactivates the automatic management of the html `lang` attribute. (Not to be used in conjunction with a multilingual plugin.)
+ - Added option that activates/deactivates the automatic management of the html `lang` attribute. (Not to be used in conjunction with a multilingual plugin.) (props to Tom [ecdltf] for valuable feedback.)
  - Allow filtering of the array containing the hreflang link(s).
 - [2.8.11](http://www.codetrax.org/versions/292)
  - The `lang` attribute of the `html` element of the web page is now set according to the content's locale. (props to Tom [ecdltf] for valuable feedback.)
