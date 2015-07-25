@@ -54,7 +54,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 function amt_get_default_options() {
     return array(
-        "settings_version"  => 14,       // IMPORTANT: SETTINGS UPGRADE: Every time settings are added or removed this has to be incremented.
+        "settings_version"  => 15,       // IMPORTANT: SETTINGS UPGRADE: Every time settings are added or removed this has to be incremented.
         "site_description"  => "",      // Front page description
         "site_keywords"     => "",      // Front page keywords
         "global_keywords"   => "",      // These keywords are added to the 'keywords' meta tag on all posts and pages
@@ -68,6 +68,7 @@ function amt_get_default_options() {
         "tc_enable_player_card_local" => "0",   // Enable the player card for locally hosted audio and video attachments.
         "tc_enforce_summary_large_image" => "0",   // Set summary_large_image as the default card.
         "auto_schemaorg"    => "0",
+        "schemaorg_force_jsonld"     => "0",
         "noodp_description" => "0",
         "noindex_search_results"     => "1",
         "noindex_date_archives"      => "0",
@@ -94,6 +95,7 @@ function amt_get_default_options() {
         "hreflang_strip_region" => "0",
         "manage_html_lang_attribute" => "0",
         "has_https_access" => "0",
+        "force_media_limit" => "0",
         "copyright_url"     => "",
         "default_image_url" => "",
         "extended_support_woocommerce"  => "0",
@@ -216,6 +218,12 @@ function amt_plugin_upgrade() {
     // Version 2.8.12 (settings_version 13->14)
     // Added "manage_html_lang_attribute"
     // No migrations required. Addition takes place in (1).
+
+    // Version 2.9.0 (settings_version 14->15)
+    // Added "schemaorg_force_jsonld"
+    // Added "force_media_limit"
+    // No migrations required. Addition takes place in (1).
+
 
     // 3) Clean stored options.
     foreach ($stored_options as $opt => $value) {

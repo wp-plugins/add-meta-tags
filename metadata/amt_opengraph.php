@@ -66,7 +66,7 @@ function amt_add_facebook_contactmethod( $contactmethods ) {
     }
 
     // The publisher profile box in the WordPress user profile page can be deactivated via filtering.
-    if ( apply_filters( 'amt_allow_publisher_settings_in_user_profiles', true ) ) {
+    if ( apply_filters( 'amt_allow_publisher_settings_in_user_profiles', false ) ) {
         // Add Facebook Publisher Profile URL
         if ( !isset( $contactmethods['amt_facebook_publisher_profile_url'] ) ) {
             $contactmethods['amt_facebook_publisher_profile_url'] = __('Facebook publisher profile URL', 'add-meta-tags') . ' (AMT)';
@@ -518,10 +518,7 @@ function amt_add_opengraph_metadata_head( $post, $attachments, $embedded_media, 
         // Publisher
         // If a Facebook publisher profile URL has been provided, it has priority.
         // Otherwise fall back to the WordPress blog home url.
-        $fb_publisher_url = get_the_author_meta('amt_facebook_publisher_profile_url', $post->post_author);
-        if ( !empty($fb_publisher_url) ) {
-            $metadata_arr[] = '<meta property="article:publisher" content="' . esc_url_raw( $fb_publisher_url, array('http', 'https', 'mailto') ) . '" />';
-        } elseif ( ! empty($options['social_main_facebook_publisher_profile_url']) ) {
+        if ( ! empty($options['social_main_facebook_publisher_profile_url']) ) {
             $metadata_arr[] = '<meta property="article:publisher" content="' . esc_url_raw( $options['social_main_facebook_publisher_profile_url'], array('http', 'https', 'mailto') ) . '" />';
         } else {
             $metadata_arr[] = '<meta property="article:publisher" content="' . esc_url_raw( trailingslashit( get_bloginfo('url') ) ) . '" />';
@@ -585,6 +582,16 @@ function amt_add_opengraph_metadata_head( $post, $attachments, $embedded_media, 
         // Further image processing
         } else {
 
+            // Media Limits
+            $image_limit = amt_metadata_get_image_limit($options);
+            $video_limit = amt_metadata_get_video_limit($options);
+            $audio_limit = amt_metadata_get_audio_limit($options);
+
+            // Counters
+            $ic = 0;    // image counter
+            $vc = 0;    // video counter
+            $ac = 0;    // audio counter
+
             // We store the featured image ID in this variable so that it can easily be excluded
             // when all images are parsed from the $attachments array.
             $featured_image_id = 0;
@@ -600,6 +607,8 @@ function amt_add_opengraph_metadata_head( $post, $attachments, $embedded_media, 
                 $featured_image_id = get_post_thumbnail_id( $post->ID );
                 // Images have been found.
                 $has_images = true;
+                // Increase image counter
+                $ic++;
             }
 
             // Process all attachments and add metatags (featured image will be excluded)
@@ -613,7 +622,7 @@ function amt_add_opengraph_metadata_head( $post, $attachments, $embedded_media, 
                     // See why we do not use strstr(): http://www.codetrax.org/issues/1091
                     $attachment_type = preg_replace( '#\/[^\/]*$#', '', $mime_type );
 
-                    if ( 'image' == $attachment_type ) {
+                    if ( 'image' == $attachment_type && $ic < $image_limit ) {
 
                         // Image tags
                         // Allow filtering of the image size.
@@ -622,8 +631,10 @@ function amt_add_opengraph_metadata_head( $post, $attachments, $embedded_media, 
 
                         // Images have been found.
                         $has_images = true;
+                        // Increase image counter
+                        $ic++;
                         
-                    } elseif ( 'video' == $attachment_type ) {
+                    } elseif ( 'video' == $attachment_type && $vc < $video_limit ) {
                         
                         if ( $options["og_omit_video_metadata"] != "1" ) {
                             // Video tags
@@ -634,9 +645,12 @@ function amt_add_opengraph_metadata_head( $post, $attachments, $embedded_media, 
                             //$metadata_arr[] = '<meta property="og:video:width" content="' . esc_attr( $main_size_meta[1] ) . '" />';
                             //$metadata_arr[] = '<meta property="og:video:height" content="' . esc_attr( $main_size_meta[2] ) . '" />';
                             $metadata_arr[] = '<meta property="og:video:type" content="' . esc_attr( $mime_type ) . '" />';
+
+                            // Increase video counter
+                            $vc++;
                         }
 
-                    } elseif ( 'audio' == $attachment_type ) {
+                    } elseif ( 'audio' == $attachment_type && $ac < $audio_limit ) {
                         
                         // Audio tags
                         $metadata_arr[] = '<meta property="og:audio" content="' . esc_url_raw( wp_get_attachment_url($attachment->ID) ) . '" />';
@@ -644,6 +658,9 @@ function amt_add_opengraph_metadata_head( $post, $attachments, $embedded_media, 
                             $metadata_arr[] = '<meta property="og:audio:secure_url" content="' . esc_url_raw( str_replace('http:', 'https:', wp_get_attachment_url($attachment->ID)) ) . '" />';
                         }
                         $metadata_arr[] = '<meta property="og:audio:type" content="' . esc_attr( $mime_type ) . '" />';
+
+                        // Increase audio counter
+                        $ac++;
                     }
 
                 }
@@ -651,6 +668,10 @@ function amt_add_opengraph_metadata_head( $post, $attachments, $embedded_media, 
 
             // Embedded Media
             foreach( $embedded_media['images'] as $embedded_item ) {
+
+                if ( $ic == $image_limit ) {
+                    break;
+                }
 
                 $metadata_arr[] = '<meta property="og:image" content="' . esc_url_raw( $embedded_item['image'] ) . '" />';
                 $metadata_arr[] = '<meta property="og:image:secure_url" content="' . esc_url_raw( str_replace('http:', 'https:', $embedded_item['image']) ) . '" />';
@@ -662,24 +683,41 @@ function amt_add_opengraph_metadata_head( $post, $attachments, $embedded_media, 
 
                 // Images have been found.
                 $has_images = true;
+                // Increase image counter
+                $ic++;
+
             }
             foreach( $embedded_media['videos'] as $embedded_item ) {
 
                 if ( $options["og_omit_video_metadata"] != "1" ) {
+
+                    if ( $vc == $video_limit ) {
+                        break;
+                    }
+
                     $metadata_arr[] = '<meta property="og:video" content="' . esc_url_raw( $embedded_item['player'] ) . '" />';
                     $metadata_arr[] = '<meta property="og:video:secure_url" content="' . esc_url_raw( str_replace('http:', 'https:', $embedded_item['player']) ) . '" />';
                     $metadata_arr[] = '<meta property="og:video:type" content="application/x-shockwave-flash" />';
                     $metadata_arr[] = '<meta property="og:video:width" content="' . esc_attr( $embedded_item['width'] ) . '" />';
                     $metadata_arr[] = '<meta property="og:video:height" content="' . esc_attr( $embedded_item['height'] ) . '" />';
+
+                    // Increase video counter
+                    $vc++;
                 }
 
             }
             foreach( $embedded_media['sounds'] as $embedded_item ) {
 
+                if ( $ac == $audio_limit ) {
+                    break;
+                }
+
                 $metadata_arr[] = '<meta property="og:audio" content="' . esc_url_raw( $embedded_item['player'] ) . '" />';
                 $metadata_arr[] = '<meta property="og:audio:secure_url" content="' . esc_url_raw( str_replace('http:', 'https:', $embedded_item['player']) ) . '" />';
                 $metadata_arr[] = '<meta property="og:audio:type" content="application/x-shockwave-flash" />';
 
+                // Increase audio counter
+                $ac++;
             }
 
             // If no images have been found so far use the default image, if set.
@@ -722,10 +760,7 @@ function amt_add_opengraph_metadata_head( $post, $attachments, $embedded_media, 
             // Publisher
             // If a Facebook publisher profile URL has been provided, it has priority.
             // Otherwise fall back to the WordPress blog home url.
-            $fb_publisher_url = get_the_author_meta('amt_facebook_publisher_profile_url', $post->post_author);
-            if ( !empty($fb_publisher_url) ) {
-                $metadata_arr[] = '<meta property="article:publisher" content="' . esc_url_raw( $fb_publisher_url, array('http', 'https', 'mailto') ) . '" />';
-            } elseif ( ! empty($options['social_main_facebook_publisher_profile_url']) ) {
+            if ( ! empty($options['social_main_facebook_publisher_profile_url']) ) {
                 $metadata_arr[] = '<meta property="article:publisher" content="' . esc_url_raw( $options['social_main_facebook_publisher_profile_url'], array('http', 'https', 'mailto') ) . '" />';
             } else {
                 $metadata_arr[] = '<meta property="article:publisher" content="' . esc_url_raw( trailingslashit( get_bloginfo('url') ) ) . '" />';

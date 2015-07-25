@@ -3,7 +3,7 @@
 Plugin Name: Add Meta Tags
 Plugin URI: http://www.g-loaded.eu/2006/01/05/add-meta-tags-wordpress-plugin/
 Description: Add basic meta tags and also Opengraph, Schema.org Microdata, Twitter Cards and Dublin Core metadata to optimize your web site for better SEO.
-Version: 2.8.17
+Version: 2.9.0
 Author: George Notaras
 Author URI: http://www.g-loaded.eu/
 License: Apache License v2
@@ -254,6 +254,8 @@ function amt_get_metadata_head() {
         $metadata_arr = array_merge( $metadata_arr, amt_add_dublin_core_metadata_head( $post, $attachments, $embedded_media, $options ) );
         // Add Google+ Author/Publisher links
         $metadata_arr = array_merge( $metadata_arr, amt_add_schemaorg_metadata_head( $post, $attachments, $embedded_media, $options ) );
+        // Add JSON+LD Schema.org
+        $metadata_arr = array_merge( $metadata_arr, amt_add_jsonld_schemaorg_metadata_head( $post, $attachments, $embedded_media, $options ) );
     }
 
     // Allow filtering of the all the generated metatags
